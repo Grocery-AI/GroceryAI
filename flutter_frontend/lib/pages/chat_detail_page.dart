@@ -6,6 +6,7 @@ import '../themes/colors.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/image_service.dart';
+import '../services/storage_service.dart';
 import '../widgets/frosted_glass_textfield.dart';
 
 class ChatDetailPage extends StatefulWidget {
@@ -35,7 +36,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
   Future<void> _initializeChat() async {
     try {
-      final token = await storage.read(key: 'token');
+      final storageService = getStorageService();
+      final token = await storageService.read(key: 'token');
       if (token == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Token not found, please login again')),
@@ -133,7 +135,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
     try {
       print('[Chat] Room ID: ${widget.roomId}');
-      final result = await apiClient.postRoomMessage(int.parse(widget.roomId), text);
+      final result =
+          await apiClient.postRoomMessage(int.parse(widget.roomId), text);
       print('[Chat] Message sent successfully: $result');
       // 自動滾動到最新訊息
       _scrollToBottom();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
+import '../services/storage_service.dart';
 import '../widgets/frosted_glass_button.dart';
 import '../widgets/frosted_glass_textfield.dart';
 import '../themes/colors.dart';
@@ -37,7 +38,8 @@ class _LoginPageState extends State<LoginPage> {
         'password': _passwordCtl.text,
       });
       final token = res['token'];
-      await storage.write(key: 'token', value: token);
+      final storageService = getStorageService();
+      await storageService.write(key: 'token', value: token);
       apiClient.token = token;
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -66,7 +68,8 @@ class _LoginPageState extends State<LoginPage> {
         'password': _passwordCtl.text,
       });
       final token = res['token'];
-      await storage.write(key: 'token', value: token);
+      final storageService = getStorageService();
+      await storageService.write(key: 'token', value: token);
       apiClient.token = token;
       if (mounted) {
         Navigator.of(context).pushReplacement(
