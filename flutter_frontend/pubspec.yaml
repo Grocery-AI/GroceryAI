@@ -12,6 +12,7 @@ dependencies:
   flutter_secure_storage: ^8.0.0
   google_fonts: ^6.0.0
   intl: ^0.19.0
+  image_picker: ^1.0.0
 
 dev_dependencies:
   flutter_test:
@@ -21,6 +22,9 @@ flutter:
   uses-material-design: true
 
   fonts:
-    - family: StackSansNotch
+    - family: Boska
       fonts:
-        - asset: assets/fonts/StackSansNotch-Bold.ttf
+        - asset: assets/fonts/Boska-Regular.otf
+          weight: 400
+        - asset: assets/fonts/Boska-Bold.otf
+          weight: 700

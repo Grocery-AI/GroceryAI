@@ -70,12 +70,14 @@ async def broadcast_message(session: AsyncSession, msg: Message, room_id: int):
             "is_bot": msg.is_bot,
             "created_at": str(msg.created_at)
         }
-    })
+    }, room_id)
 
 async def maybe_answer_with_llm(content: str, room_id: int):
-    """Generate an LLM response if message contains a question mark"""
-    if "?" not in content:
+    """Generate an LLM response if message mentions @gro"""
+    if "@gro" not in content:
         return
+    # Remove @gro tag from content before sending to LLM
+    llm_content = content.replace("@gro", "").strip()
     system_prompt = (
         "You are a helpful assistant participating in a small group chat. "
         "Provide concise, accurate answers suitable for a shared chat context. "
@@ -84,7 +86,7 @@ async def maybe_answer_with_llm(content: str, room_id: int):
     try:
         reply_text = await chat_completion([
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": content}
+            {"role": "user", "content": llm_content}
         ])
     except Exception as e:
         reply_text = f"(LLM error) {e}"
@@ -295,14 +297,28 @@ async def post_room_message(room_id: int, payload: MessagePayload, username: str
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
+    """WebSocket endpoint that groups connections by room_id"""
+    # Extract room_id from query parameters
+    room_id_str = websocket.query_params.get("room_id")
+    if not room_id_str:
+        await websocket.close(code=1008, reason="room_id required")
+        return
+    
     try:
-        while True:
-            await websocket.receive_text()
-    except Exception as e:
-        print(f"WebSocket error: {e}")
+        room_id = int(room_id_str)
+    except ValueError:
+        await websocket.close(code=1008, reason="room_id must be integer")
+        return
+    
+    try:
+        await manager.connect(websocket, room_id)
+        try:
+            while True:
+                await websocket.receive_text()
+        except Exception as e:
+            print(f"WebSocket error: {e}")
     finally:
-        manager.disconnect(websocket)
+        manager.disconnect(websocket, room_id)
 
 # Serve frontend
 app.mount("/", StaticFiles(directory="../frontend", html=True), name="static")

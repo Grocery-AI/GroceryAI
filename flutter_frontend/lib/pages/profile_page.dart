@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../themes/colors.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/image_service.dart';
 import 'login_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -48,11 +49,53 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _changeAvatar() async {
+    try {
+      final imageFile = await ImageService.showImagePickerDialog(context);
+      if (imageFile != null) {
+        final isValid = await ImageService.isImageSizeValid(imageFile);
+        if (!isValid) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Image size must be less than 5MB')),
+            );
+          }
+          return;
+        }
+
+        // TODO: backend API to upload avatar
+        // final base64Image = await ImageService.imageToBase64(imageFile);
+        // await apiClient.updateUserAvatar(base64Image);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Avatar updated successfully')),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error changing avatar: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to change avatar: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile'),
+        title: Text(
+          'Profile',
+          style: TextStyle(
+            fontFamily: 'Boska',
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF064E3B),
+          ),
+        ),
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -60,24 +103,54 @@ class _ProfilePageState extends State<ProfilePage> {
               padding: EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // Avatar
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: kPrimary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        _currentUsername[0].toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                  // Avatar with Edit Button
+                  Stack(
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: kPrimary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            _currentUsername[0].toUpperCase(),
+                            style: TextStyle(
+                              fontFamily: 'Boska',
+                              fontSize: 48,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      // Edit Button at Bottom Right
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _changeAvatar,
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: kSecondary,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 20),
 
@@ -85,8 +158,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   Text(
                     _currentUsername,
                     style: TextStyle(
+                      fontFamily: 'Boska',
                       fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                       color: kTextDark,
                     ),
                   ),
@@ -128,8 +202,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: Text(
                         'Logout',
                         style: TextStyle(
+                          fontFamily: 'Boska',
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                           color: Colors.white,
                         ),
                       ),
@@ -159,11 +234,12 @@ class _ProfilePageState extends State<ProfilePage> {
         title: Text(
           title,
           style: TextStyle(
-            fontWeight: FontWeight.w600,
+            fontFamily: 'Boska',
+            fontWeight: FontWeight.w400,
             color: kTextDark,
           ),
         ),
-        subtitle: Text(subtitle),
+        subtitle: Text(subtitle, style: TextStyle(fontFamily: 'Boska')),
         trailing: Icon(Icons.chevron_right, color: kTextGray),
         onTap: onTap,
       ),

@@ -7,12 +7,14 @@ class FrostedGlassTextField extends StatefulWidget {
   final String placeholder;
   final bool obscureText;
   final bool enabled;
+  final ValueChanged<String>? onChanged;
 
   const FrostedGlassTextField({
     required this.controller,
     required this.placeholder,
     this.obscureText = false,
     this.enabled = true,
+    this.onChanged,
   });
 
   @override
@@ -74,6 +76,7 @@ class _FrostedGlassTextFieldState extends State<FrostedGlassTextField> {
             focusNode: _focusNode,
             obscureText: widget.obscureText,
             enabled: widget.enabled,
+            onChanged: widget.onChanged,
             style: TextStyle(
               fontSize: 14,
               color: kTextDark,

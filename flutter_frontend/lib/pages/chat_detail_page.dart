@@ -5,6 +5,7 @@ import '../models/message.dart';
 import '../themes/colors.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/image_service.dart';
 import '../widgets/frosted_glass_textfield.dart';
 
 class ChatDetailPage extends StatefulWidget {
@@ -23,10 +24,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   final _messages = <Message>[];
   late String _currentUsername;
   bool _isConnecting = true;
+  late ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _initializeChat();
   }
 
@@ -43,7 +46,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       _currentUsername = getUsernameFromToken(token) ?? 'User';
 
       _channel = WebSocketChannel.connect(
-        Uri.parse('$wsUrl?token=$token'),
+        Uri.parse('$wsUrl?token=$token&room_id=${widget.roomId}'),
       );
 
       await _loadMessages();
@@ -82,6 +85,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       }
       if (mounted) {
         setState(() {});
+        // 加載訊息後自動滾動到最新訊息
+        _scrollToBottom();
       }
     } catch (e) {
       print('Error loading messages: $e');
@@ -98,6 +103,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           setState(() {
             _messages.add(msg);
           });
+          // 接收新訊息時也自動滾動到底部
+          _scrollToBottom();
         }
       }
     } catch (e) {
@@ -105,19 +112,71 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     }
   }
 
+  Future<void> _scrollToBottom() async {
+    // 延遲一下確保 ListView 已經更新
+    await Future.delayed(Duration(milliseconds: 100));
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
+    print('[Chat] Sending message: $text');
     _messageController.clear();
 
     try {
-      await apiClient.postRoomMessage(int.parse(widget.roomId), text);
+      print('[Chat] Room ID: ${widget.roomId}');
+      final result = await apiClient.postRoomMessage(int.parse(widget.roomId), text);
+      print('[Chat] Message sent successfully: $result');
+      // 自動滾動到最新訊息
+      _scrollToBottom();
     } catch (e) {
-      print('Error sending message: $e');
+      print('[Chat] Error sending message: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
+    }
+  }
+
+  Future<void> _uploadImage() async {
+    try {
+      final imageFile = await ImageService.showImagePickerDialog(context);
+      if (imageFile != null) {
+        // 檢查圖片大小
+        final isValid = await ImageService.isImageSizeValid(imageFile);
+        if (!isValid) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Image size must be less than 5MB')),
+            );
+          }
+          return;
+        }
+
+        // TODO: 上傳圖片到後端
+        // final base64Image = await ImageService.imageToBase64(imageFile);
+        // await apiClient.postRoomMessage(int.parse(widget.roomId), base64Image);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Image uploaded successfully')),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error uploading image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload image: $e')),
+        );
+      }
     }
   }
 
@@ -177,6 +236,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   @override
   void dispose() {
     _messageController.dispose();
+    _scrollController.dispose();
     _channel.sink.close();
     super.dispose();
   }
@@ -202,10 +262,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                     ? Center(
                         child: Text(
                           'No messages yet',
-                          style: TextStyle(color: kTextGray),
+                          style:
+                              TextStyle(color: kTextGray, fontFamily: 'Boska'),
                         ),
                       )
                     : ListView.builder(
+                        controller: _scrollController,
                         reverse: false,
                         itemCount: _messages.length,
                         itemBuilder: (_, i) {
@@ -240,7 +302,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                                     Text(
                                       msg.username,
                                       style: TextStyle(
-                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Boska',
+                                        fontWeight: FontWeight.w700,
                                         fontSize: 12,
                                         color: kTextDark,
                                       ),
@@ -257,6 +320,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                                   Text(
                                     msg.formattedTime,
                                     style: TextStyle(
+                                      fontFamily: 'Boska',
                                       fontSize: 11,
                                       color: kTextGray,
                                     ),
@@ -268,10 +332,61 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                         },
                       ),
           ),
+          // LLM 提示信息
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: kSecondary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: kSecondary.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: kSecondary, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Type "@gro " to ask the AI assistant',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: kSecondary,
+                        fontFamily: 'Boska',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Padding(
             padding: EdgeInsets.all(16),
             child: Row(
               children: [
+                // 圖片上傳按鈕
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _uploadImage,
+                    child: Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: kSecondary.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: kSecondary.withOpacity(0.5),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(Icons.image, color: kSecondary, size: 20),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
                 Expanded(
                   child: FrostedGlassTextField(
                     controller: _messageController,

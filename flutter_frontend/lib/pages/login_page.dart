@@ -88,73 +88,42 @@ class _LoginPageState extends State<LoginPage> {
           padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Column(
             children: [
-              SizedBox(height: 40),
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  border: Border.all(color: kTextLight, width: 2),
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: Center(
-                  child: Text('🛒', style: TextStyle(fontSize: 36)),
-                ),
-              ),
-              SizedBox(height: 24),
-              Text(
-                'Grocery AI',
-                style: TextStyle(
-                  fontFamily: 'StackSansNotch',
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: kPrimary,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Smart Shopping Assistant',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: kTextGray,
-                  fontFamily: 'StackSansText',
-                ),
-              ),
-              SizedBox(height: 48),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.2),
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Username',
+                  'Grocery AI',
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: kTextDark,
-                    fontFamily: 'StackSans',
+                    fontFamily: 'Boska',
+                    fontSize: 60,
+                    fontWeight: FontWeight.w700,
+                    color: kPrimary,
                   ),
                 ),
               ),
-              SizedBox(height: 8),
+              SizedBox(height: 5),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'From Group Chat to Grocery Cart',
+                  style: TextStyle(
+                    fontFamily: 'Boska',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 16,
+                    color: kTextGray,
+                  ),
+                ),
+              ),
+              SizedBox(height: 60),
               FrostedGlassTextField(
                 controller: _usernameCtl,
-                placeholder: 'Enter your username',
+                placeholder: 'Username',
                 enabled: !_isLoading,
               ),
               SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Password',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: kTextDark,
-                    fontFamily: 'StackSans',
-                  ),
-                ),
-              ),
-              SizedBox(height: 8),
               FrostedGlassTextField(
                 controller: _passwordCtl,
-                placeholder: 'Enter your password',
+                placeholder: 'Password',
                 obscureText: true,
                 enabled: !_isLoading,
               ),
@@ -167,7 +136,8 @@ class _LoginPageState extends State<LoginPage> {
                     fontSize: 12,
                     color: kPrimary,
                     decoration: TextDecoration.underline,
-                    fontFamily: 'StackSansText',
+                    fontFamily: 'Boska',
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -185,7 +155,8 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(
                       fontSize: 12,
                       color: kErrorRed,
-                      fontFamily: 'StackSansText',
+                      fontFamily: 'Boska',
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ),
