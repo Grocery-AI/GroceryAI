@@ -19,6 +19,8 @@ load_dotenv()
 
 APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
 APP_PORT = int(os.getenv("APP_PORT", "8000"))
+GROCERY_CSV_PATH = os.getenv("GROCERY_CSV_PATH", "./GroceryDataset.csv")
+CSV_HEADERS = ["Sub Category", " Price ", "Rating", "Title"]
 
 app = FastAPI(title="Group Chat with LLM Bot")
 

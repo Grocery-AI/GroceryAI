@@ -2,12 +2,22 @@ import os
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import String, Text, Boolean, ForeignKey, DateTime, func
+from sqlalchemy import String, Text, Boolean, ForeignKey, DateTime, func, DECIMAL, Float, Integer
 from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "mysql+asyncmy://chatuser:chatpass@localhost:3306/groupchat")
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+asyncmy://chatuser:chatpass@localhost:3306/groceryshopperai")
+
+class GroceryItem(Base):
+    __tablename__ = "grocery_items"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String(255), index=True)
+    sub_category: Mapped[str] = mapped_column(String(120), index=True)
+    price: Mapped[DECIMAL] = mapped_column(DECIMAL(10, 2))
+    rating_value: Mapped[float] = mapped_column(Float, nullable=True)
+    rating_count: Mapped[int] = mapped_column(Integer, nullable=True)
+    created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 class Base(DeclarativeBase):
     pass

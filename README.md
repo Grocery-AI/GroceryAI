@@ -6,7 +6,15 @@ FastAPI + MySQL + vanilla HTML/JS group chat with LLM bot (OpenAI-compatible ser
 
 ```bash
 # 1) MySQL
-# create DB & user, or run sql/schema.sql
+- Create database in MySQL
+
+CREATE DATABASE groceryshopperai CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL PRIVILEGES ON groceryshopperai.* TO 'chatuser'@'localhost';
+FLUSH PRIVILEGES;
+
+- Load GroceryDataset.csv
+cd backend
+python load_groceries.csv
 
 # 2) Backend
 cd backend
