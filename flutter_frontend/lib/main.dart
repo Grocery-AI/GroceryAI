@@ -1,24 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'pages/login_page.dart';
+import 'pages/home_page.dart';
 import 'themes/light_mode.dart';
 import 'themes/dark_mode.dart';
+import 'providers/theme_provider.dart';
+import 'providers/auth_provider.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp();
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'GroceryChat',
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      themeMode: ThemeMode.light,
-      home: LoginPage(),
-      debugShowCheckedModeBanner: false,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            title: 'GroceryChat',
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            themeMode: themeProvider.themeMode,
+            home: Consumer<AuthProvider>(
+              builder: (context, authProvider, _) {
+                // Show loading screen while checking auth status
+                if (authProvider.isLoading) {
+                  return Scaffold(
+                    body: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+                
+                // If logged in, go to home page, otherwise go to login page
+                return authProvider.isLoggedIn
+                    ? HomePage()
+                    : LoginPage();
+              },
+            ),
+            debugShowCheckedModeBanner: false,
+          );
+        },
+      ),
     );
   }
 }

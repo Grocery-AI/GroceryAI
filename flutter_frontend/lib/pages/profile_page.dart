@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../themes/colors.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/image_service.dart';
 import '../services/storage_service.dart';
+import '../providers/theme_provider.dart';
+import '../providers/auth_provider.dart';
 import 'login_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -263,8 +266,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _logout() async {
     try {
-      final storageService = getStorageService();
-      await storageService.delete(key: 'token');
+      // Clear token from AuthProvider
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.logout();
+      
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -277,6 +282,107 @@ class _ProfilePageState extends State<ProfilePage> {
         SnackBar(content: Text('Logout failed: $e')),
       );
     }
+  }
+
+  Future<void> _showThemeDialog(BuildContext context, ThemeProvider themeProvider) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Select Theme',
+          style: TextStyle(fontFamily: 'Boska', fontWeight: FontWeight.w700),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: () {
+                themeProvider.setThemeMode(ThemeMode.light);
+                Navigator.pop(context);
+              },
+              child: Container(
+                padding: EdgeInsets.all(12),
+                margin: EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: themeProvider.themeMode == ThemeMode.light ? kPrimary : Colors.grey,
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.light_mode,
+                      color: themeProvider.themeMode == ThemeMode.light ? kPrimary : Colors.grey,
+                      size: 24,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Light Mode',
+                        style: TextStyle(
+                          fontFamily: 'Boska',
+                          fontWeight: themeProvider.themeMode == ThemeMode.light
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                          color: kTextDark,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                themeProvider.setThemeMode(ThemeMode.dark);
+                Navigator.pop(context);
+              },
+              child: Container(
+                padding: EdgeInsets.all(12),
+                margin: EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: themeProvider.themeMode == ThemeMode.dark ? kPrimary : Colors.grey,
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.dark_mode,
+                      color: themeProvider.themeMode == ThemeMode.dark ? kPrimary : Colors.grey,
+                      size: 24,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Dark Mode',
+                        style: TextStyle(
+                          fontFamily: 'Boska',
+                          fontWeight: themeProvider.themeMode == ThemeMode.dark
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                          color: kTextDark,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(fontFamily: 'Boska')),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showLLMModelDialog() async {
@@ -536,11 +642,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   SizedBox(height: 30),
 
                   // Settings Section
-                  _buildSettingTile(
-                    icon: Icons.brightness_6,
-                    title: 'Theme',
-                    subtitle: 'Light Mode',
-                    onTap: () {},
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return _buildSettingTile(
+                        icon: Icons.brightness_6,
+                        title: 'Theme',
+                        subtitle: themeProvider.isDarkMode ? 'Dark Mode' : 'Light Mode',
+                        onTap: () => _showThemeDialog(context, themeProvider),
+                      );
+                    },
                   ),
                   _buildSettingTile(
                     icon: Icons.smart_toy,

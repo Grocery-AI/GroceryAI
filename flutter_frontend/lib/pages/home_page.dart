@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:ui';
 import 'chat_detail_page.dart';
 import 'profile_page.dart';
 import '../services/api_client.dart';
+import '../providers/auth_provider.dart';
 import '../themes/colors.dart';
 import '../widgets/frosted_glass_button.dart';
 import '../widgets/frosted_glass_textfield.dart';
@@ -24,6 +26,11 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    // Set token from AuthProvider to API client
+    final authProvider = context.read<AuthProvider>();
+    if (authProvider.token != null) {
+      apiClient.token = authProvider.token;
+    }
     _loadRooms();
   }
 

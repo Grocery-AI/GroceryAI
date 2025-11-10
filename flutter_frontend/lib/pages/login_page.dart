@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/api_client.dart';
-import '../services/storage_service.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/frosted_glass_button.dart';
 import '../widgets/frosted_glass_textfield.dart';
 import '../themes/colors.dart';
@@ -38,9 +39,14 @@ class _LoginPageState extends State<LoginPage> {
         'password': _passwordCtl.text,
       });
       final token = res['token'];
-      final storageService = getStorageService();
-      await storageService.write(key: 'token', value: token);
+      
+      // Save token to AuthProvider
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.setToken(token);
+      
+      // Set token in API client
       apiClient.token = token;
+      
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => HomePage()),
@@ -68,9 +74,14 @@ class _LoginPageState extends State<LoginPage> {
         'password': _passwordCtl.text,
       });
       final token = res['token'];
-      final storageService = getStorageService();
-      await storageService.write(key: 'token', value: token);
+      
+      // Save token to AuthProvider
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.setToken(token);
+      
+      // Set token in API client
       apiClient.token = token;
+      
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => HomePage()),
