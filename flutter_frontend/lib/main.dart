@@ -43,11 +43,9 @@ class _MyAppState extends State<MyApp> {
                     ),
                   );
                 }
-                
+
                 // If logged in, go to home page, otherwise go to login page
-                return authProvider.isLoggedIn
-                    ? HomePage()
-                    : LoginPage();
+                return authProvider.isLoggedIn ? HomePage() : LoginPage();
               },
             ),
             debugShowCheckedModeBanner: false,

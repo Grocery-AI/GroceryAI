@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../themes/colors.dart';
+import '../themes/dark_mode.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/image_service.dart';
@@ -269,7 +270,7 @@ class _ProfilePageState extends State<ProfilePage> {
       // Clear token from AuthProvider
       final authProvider = context.read<AuthProvider>();
       await authProvider.logout();
-      
+
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -284,7 +285,8 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _showThemeDialog(BuildContext context, ThemeProvider themeProvider) async {
+  Future<void> _showThemeDialog(
+      BuildContext context, ThemeProvider themeProvider) async {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -305,7 +307,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 margin: EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: themeProvider.themeMode == ThemeMode.light ? kPrimary : Colors.grey,
+                    color: themeProvider.themeMode == ThemeMode.light
+                        ? kPrimary
+                        : Colors.grey,
                     width: 2,
                   ),
                   borderRadius: BorderRadius.circular(8),
@@ -314,7 +318,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     Icon(
                       Icons.light_mode,
-                      color: themeProvider.themeMode == ThemeMode.light ? kPrimary : Colors.grey,
+                      color: themeProvider.themeMode == ThemeMode.light
+                          ? kPrimary
+                          : Colors.grey,
                       size: 24,
                     ),
                     SizedBox(width: 12),
@@ -326,7 +332,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           fontWeight: themeProvider.themeMode == ThemeMode.light
                               ? FontWeight.w700
                               : FontWeight.w400,
-                          color: kTextDark,
+                          color: themeProvider.themeMode == ThemeMode.light
+                              ? kPrimary
+                              : Colors.grey,
                         ),
                       ),
                     ),
@@ -344,7 +352,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 margin: EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: themeProvider.themeMode == ThemeMode.dark ? kPrimary : Colors.grey,
+                    color: themeProvider.themeMode == ThemeMode.dark
+                        ? kDarkText
+                        : Colors.grey,
                     width: 2,
                   ),
                   borderRadius: BorderRadius.circular(8),
@@ -353,7 +363,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     Icon(
                       Icons.dark_mode,
-                      color: themeProvider.themeMode == ThemeMode.dark ? kPrimary : Colors.grey,
+                      color: themeProvider.themeMode == ThemeMode.dark
+                          ? kDarkText
+                          : Colors.grey,
                       size: 24,
                     ),
                     SizedBox(width: 12),
@@ -365,7 +377,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           fontWeight: themeProvider.themeMode == ThemeMode.dark
                               ? FontWeight.w700
                               : FontWeight.w400,
-                          color: kTextDark,
+                          color: themeProvider.themeMode == ThemeMode.dark
+                              ? kDarkText
+                              : Colors.grey,
                         ),
                       ),
                     ),
@@ -568,7 +582,7 @@ class _ProfilePageState extends State<ProfilePage> {
             fontFamily: 'Boska',
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF064E3B),
+            color: Theme.of(context).appBarTheme.titleTextStyle?.color,
           ),
         ),
       ),
@@ -585,7 +599,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: kPrimary,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? kDarkCard
+                              : kPrimary,
                           shape: BoxShape.circle,
                         ),
                         child: Center(
@@ -645,20 +661,25 @@ class _ProfilePageState extends State<ProfilePage> {
                   Consumer<ThemeProvider>(
                     builder: (context, themeProvider, _) {
                       return _buildSettingTile(
+                        context: context,
                         icon: Icons.brightness_6,
                         title: 'Theme',
-                        subtitle: themeProvider.isDarkMode ? 'Dark Mode' : 'Light Mode',
+                        subtitle: themeProvider.isDarkMode
+                            ? 'Dark Mode'
+                            : 'Light Mode',
                         onTap: () => _showThemeDialog(context, themeProvider),
                       );
                     },
                   ),
                   _buildSettingTile(
+                    context: context,
                     icon: Icons.smart_toy,
                     title: 'AI Model',
                     subtitle: _currentLLMModel.toUpperCase(),
                     onTap: _showLLMModelDialog,
                   ),
                   _buildSettingTile(
+                    context: context,
                     icon: Icons.language,
                     title: 'Language',
                     subtitle: 'English',
@@ -669,24 +690,31 @@ class _ProfilePageState extends State<ProfilePage> {
                   // Logout Button
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _logout,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'Logout',
-                        style: TextStyle(
-                          fontFamily: 'Boska',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white,
-                        ),
-                      ),
+                    child: Consumer<ThemeProvider>(
+                      builder: (context, themeProvider, _) {
+                        final isLight =
+                            themeProvider.themeMode == ThemeMode.light;
+                        return ElevatedButton(
+                          onPressed: _logout,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                isLight ? Colors.red : Color(0xFFB83C3C),
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Logout',
+                            style: TextStyle(
+                              fontFamily: 'Boska',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -696,30 +724,43 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildSettingTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: isDarkMode ? Color(0xFF0D3D2E) : Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(
+          color: isDarkMode ? Color(0xFF1A5C47) : Colors.grey[300]!,
+        ),
       ),
       child: ListTile(
-        leading: Icon(icon, color: kPrimary),
+        leading: Icon(icon, color: isDarkMode ? kDarkText : kPrimary),
         title: Text(
           title,
           style: TextStyle(
             fontFamily: 'Boska',
             fontWeight: FontWeight.w400,
-            color: kTextDark,
+            color: isDarkMode ? kDarkText : kTextDark,
           ),
         ),
-        subtitle: Text(subtitle, style: TextStyle(fontFamily: 'Boska')),
-        trailing: Icon(Icons.chevron_right, color: kTextGray),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            fontFamily: 'Boska',
+            color: isDarkMode ? kDarkTextSecondary : kTextGray,
+          ),
+        ),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: isDarkMode ? kDarkTextSecondary : kTextGray,
+        ),
         onTap: onTap,
       ),
     );

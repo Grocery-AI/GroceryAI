@@ -39,14 +39,14 @@ class _LoginPageState extends State<LoginPage> {
         'password': _passwordCtl.text,
       });
       final token = res['token'];
-      
+
       // Save token to AuthProvider
       final authProvider = context.read<AuthProvider>();
       await authProvider.setToken(token);
-      
+
       // Set token in API client
       apiClient.token = token;
-      
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => HomePage()),
@@ -74,14 +74,14 @@ class _LoginPageState extends State<LoginPage> {
         'password': _passwordCtl.text,
       });
       final token = res['token'];
-      
+
       // Save token to AuthProvider
       final authProvider = context.read<AuthProvider>();
       await authProvider.setToken(token);
-      
+
       // Set token in API client
       apiClient.token = token;
-      
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => HomePage()),
@@ -111,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
                     fontFamily: 'Boska',
                     fontSize: 60,
                     fontWeight: FontWeight.w700,
-                    color: kPrimary,
+                    color: Theme.of(context).textTheme.displayLarge?.color,
                   ),
                 ),
               ),
@@ -124,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
                     fontFamily: 'Boska',
                     fontWeight: FontWeight.w400,
                     fontSize: 16,
-                    color: kTextGray,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
               ),
@@ -148,7 +148,7 @@ class _LoginPageState extends State<LoginPage> {
                   'Forgot password?',
                   style: TextStyle(
                     fontSize: 12,
-                    color: kPrimary,
+                    color: Theme.of(context).textTheme.displayLarge?.color,
                     decoration: TextDecoration.underline,
                     fontFamily: 'Boska',
                     fontWeight: FontWeight.w400,

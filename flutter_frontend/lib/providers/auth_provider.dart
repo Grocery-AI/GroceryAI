@@ -23,7 +23,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       // Try to read stored token
       final storedToken = await storage.read(key: 'auth_token');
-      
+
       if (storedToken != null && storedToken.isNotEmpty) {
         _token = storedToken;
         _username = getUsernameFromToken(storedToken);
@@ -49,13 +49,13 @@ class AuthProvider extends ChangeNotifier {
     _token = token;
     _username = getUsernameFromToken(token);
     _isLoggedIn = true;
-    
+
     try {
       await storage.write(key: 'auth_token', value: token);
     } catch (e) {
       print('[AuthProvider] Error saving token: $e');
     }
-    
+
     notifyListeners();
   }
 
@@ -64,13 +64,13 @@ class AuthProvider extends ChangeNotifier {
     _token = null;
     _username = null;
     _isLoggedIn = false;
-    
+
     try {
       await storage.delete(key: 'auth_token');
     } catch (e) {
       print('[AuthProvider] Error deleting token: $e');
     }
-    
+
     notifyListeners();
   }
 }

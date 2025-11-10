@@ -200,7 +200,7 @@ class _HomePageState extends State<HomePage> {
             fontFamily: 'Boska',
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF064E3B),
+            color: Theme.of(context).appBarTheme.titleTextStyle?.color,
           ),
         ),
         actions: [
