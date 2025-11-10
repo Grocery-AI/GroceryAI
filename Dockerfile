@@ -13,13 +13,22 @@ COPY requirements.txt .
 # Install Python dependencies without caching to reduce image size
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all application files into the container (from your local backend directory)
+# Copy all application files into the container
+# This copies everything from your local repo root to /app in the container
 COPY . .
 
-# Expose port 8080 (Cloud Run listens on this port by default)
+# --- Set the PYTHONPATH ---
+# Add the working directory (/app) to Python's module search path.
+# This allows Python (and Uvicorn) to find the 'backend' module
+# when trying to import 'backend.app'.
+ENV PYTHONPATH "${PYTHONPATH}:/app"
+
+# Expose port 8080 (This is informational; Cloud Run uses the $PORT env var)
 EXPOSE 8080
 
-# Command to run the FastAPI app with Uvicorn
-# Format: uvicorn <module_name>:<app_instance> --host 0.0.0.0 --port 8080
-# Example: If your FastAPI instance is "app" inside backend/app.py, then use "backend.app:app"
-CMD ["uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8080"]
+# --- Use $PORT and Shell Form ---
+# 1. Use the shell form (a single string) instead of the exec form (JSON array).
+#    This is required for the shell to interpret the $PORT environment variable.
+# 2. Bind Uvicorn to the $PORT provided by Cloud Run, not a hardcoded '8080'.
+# 3. Bind to 0.0.0.0 to accept connections from any IP (required by Cloud Run).
+CMD uvicorn backend.app:app --host 0.0.0.0 --port $PORT
