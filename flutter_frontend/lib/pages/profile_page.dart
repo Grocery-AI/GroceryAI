@@ -37,7 +37,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _initUsername() async {
     try {
       final storageService = getStorageService();
-      final token = await storageService.read(key: 'token');
+      final token = await storageService.read(key: 'auth_token');
       if (token != null) {
         _currentUsername = getUsernameFromToken(token) ?? 'User';
         // 加載用戶的 LLM 模型偏好和可用模型
@@ -610,7 +610,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         child: Center(
                           child: Text(
-                            (_currentUsername.isNotEmpty ? _currentUsername[0].toUpperCase() : '?'),
+                            (_currentUsername.isNotEmpty
+                                ? _currentUsername[0].toUpperCase()
+                                : '?'),
                             style: TextStyle(
                               fontFamily: 'Boska',
                               fontSize: 48,

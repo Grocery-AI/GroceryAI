@@ -25,6 +25,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   final _messages = <Message>[];
   late String _currentUsername;
   bool _isConnecting = true;
+  bool _hasError = false;
+  String _errorMessage = '';
   late ScrollController _scrollController;
 
   @override
@@ -37,43 +39,69 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   Future<void> _initializeChat() async {
     try {
       final storageService = getStorageService();
-      final token = await storageService.read(key: 'token');
+      final token = await storageService.read(key: 'auth_token');
       if (token == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Token not found, please login again')),
-        );
+        if (mounted) {
+          setState(() {
+            _hasError = true;
+            _errorMessage = 'Token not found, please login again';
+            _isConnecting = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(_errorMessage)),
+          );
+        }
         return;
       }
 
       _currentUsername = getUsernameFromToken(token) ?? 'User';
 
-      _channel = WebSocketChannel.connect(
-        Uri.parse('$wsUrl?token=$token&room_id=${widget.roomId}'),
-      );
+      try {
+        _channel = WebSocketChannel.connect(
+          Uri.parse('$wsUrl?token=$token&room_id=${widget.roomId}'),
+        );
 
-      await _loadMessages();
+        await _loadMessages();
 
-      _channel.stream.listen(
-        (event) {
-          _handleWebSocketMessage(event);
-        },
-        onError: (error) {
-          print('WebSocket error: $error');
-        },
-        onDone: () {
-          print('WebSocket closed');
-        },
-      );
+        _channel.stream.listen(
+          (event) {
+            _handleWebSocketMessage(event);
+          },
+          onError: (error) {
+            print('[ChatPage] WebSocket error: $error');
+            if (mounted) {
+              setState(() {
+                _hasError = true;
+                _errorMessage = 'WebSocket connection error: $error';
+              });
+            }
+          },
+          onDone: () {
+            print('[ChatPage] WebSocket closed');
+          },
+        );
 
-      if (mounted) {
-        setState(() => _isConnecting = false);
+        if (mounted) {
+          setState(() => _isConnecting = false);
+        }
+      } catch (e) {
+        print('[ChatPage] Failed to connect to WebSocket: $e');
+        if (mounted) {
+          setState(() {
+            _hasError = true;
+            _errorMessage = 'Failed to connect to chat: $e';
+            _isConnecting = false;
+          });
+        }
       }
     } catch (e) {
-      print('Error initializing chat: $e');
+      print('[ChatPage] Error in _initializeChat: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connection error: $e')),
-        );
+        setState(() {
+          _hasError = true;
+          _errorMessage = 'Initialization error: $e';
+          _isConnecting = false;
+        });
       }
     }
   }
@@ -246,6 +274,41 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    // If there's an error during initialization, show error message
+    if (_hasError) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Chat - ${widget.roomName}'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red),
+              SizedBox(height: 16),
+              Text(
+                'Connection Error',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(
+                _errorMessage,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: kTextGray, fontFamily: 'Boska'),
+              ),
+              SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text('Go Back'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Chat - ${widget.roomName}'),
