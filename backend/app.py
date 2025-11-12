@@ -148,15 +148,17 @@ async def login(payload: AuthPayload, session: AsyncSession = Depends(get_db)):
 
 @app.get("/api/rooms")
 async def get_rooms(username: str = Depends(get_current_user_token), session: AsyncSession = Depends(get_db)):
-    """Get all rooms that the user is a member of"""
+    """Get all rooms that the user is a member of (excluding soft-deleted)"""
     res = await session.execute(select(User).where(User.username == username))
     u = res.scalar_one_or_none()
     if not u:
         raise HTTPException(status_code=401, detail="Invalid user")
     
-    # Get all rooms this user is a member of
+    # Get all rooms this user is a member of and NOT deleted
     member_res = await session.execute(
-        select(Room).join(RoomMember).where(RoomMember.user_id == u.id)
+        select(Room).join(RoomMember).where(
+            (RoomMember.user_id == u.id) & (RoomMember.deleted_at == None)
+        )
     )
     rooms = member_res.scalars().all()
     return {
@@ -188,6 +190,57 @@ async def create_room(payload: RoomPayload, username: str = Depends(get_current_
     await session.commit()
     
     return {"ok": True, "room": {"id": room.id, "name": room.name}}
+
+@app.delete("/api/rooms/{room_id}")
+async def delete_room(room_id: int, username: str = Depends(get_current_user_token), session: AsyncSession = Depends(get_db)):
+    """
+    Soft-delete a room for the current user
+    - Marks the room as deleted for this user (deleted_at = now())
+    - Room reappears if other users send messages
+    - Room is permanently deleted if all members have deleted it
+    """
+    from datetime import datetime
+    
+    # Get current user
+    res = await session.execute(select(User).where(User.username == username))
+    user = res.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid user")
+    
+    # Check if room exists
+    room = await session.get(Room, room_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    
+    # Get the room member entry for this user
+    member_res = await session.execute(
+        select(RoomMember).where(
+            (RoomMember.room_id == room_id) & (RoomMember.user_id == user.id)
+        )
+    )
+    member = member_res.scalar_one_or_none()
+    if not member:
+        raise HTTPException(status_code=404, detail="User is not a member of this room")
+    
+    # Soft-delete: mark as deleted
+    member.deleted_at = datetime.utcnow()
+    session.add(member)
+    await session.commit()
+    
+    # Check if all members have deleted this room
+    active_members = await session.execute(
+        select(RoomMember).where(
+            (RoomMember.room_id == room_id) & (RoomMember.deleted_at == None)
+        )
+    )
+    active_members_list = active_members.scalars().all()
+    
+    if not active_members_list:
+        # No active members, delete room and all messages
+        await session.delete(room)
+        await session.commit()
+    
+    return {"ok": True, "message": "Room deleted for you"}
 
 @app.get("/api/rooms/{room_id}/members")
 async def get_room_members(room_id: int, session: AsyncSession = Depends(get_db)):
@@ -284,15 +337,22 @@ async def post_room_message(room_id: int, payload: MessagePayload, username: str
         if not u:
             raise HTTPException(status_code=401, detail="Invalid user")
         
-        # Check if user is member of room
+        # Check if user is member of room (including soft-deleted members)
         member_check = await session.execute(
             select(RoomMember).where(
                 (RoomMember.room_id == room_id) & 
                 (RoomMember.user_id == u.id)
             )
         )
-        if not member_check.scalar_one_or_none():
+        member = member_check.scalar_one_or_none()
+        if not member:
             raise HTTPException(status_code=403, detail="Not a member of this room")
+        
+        # If user had deleted this room, reactivate it (undelete)
+        if member.deleted_at is not None:
+            member.deleted_at = None
+            session.add(member)
+            await session.commit()
         
         # Create message
         m = Message(room_id=room_id, user_id=u.id, content=payload.content, is_bot=False)

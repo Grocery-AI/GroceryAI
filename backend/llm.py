@@ -30,7 +30,6 @@ async def chat_completion(messages, temperature: float = 0.2, max_tokens: int = 
     """
     Supports multiple models: openai, gemini
     """
-    # 選擇模型（使用傳入的模型名稱，或使用預設）
     if model_name is None:
         model_name = DEFAULT_MODEL
     
