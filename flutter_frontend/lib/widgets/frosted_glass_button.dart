@@ -56,7 +56,7 @@ class _FrostedGlassButtonState extends State<FrostedGlassButton> {
                 child: Text(
                   widget.label,
                   style: TextStyle(
-                    fontFamily: 'Boska',
+                    fontFamily: 'Satoshi',
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
                     color: _getTextColor(isDisabled),

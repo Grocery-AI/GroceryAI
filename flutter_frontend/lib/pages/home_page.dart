@@ -95,7 +95,6 @@ class _HomePageState extends State<HomePage> {
         print('[HomePage]   Room $i: ${rooms[i]}');
       }
 
-      // 更新 state 一次，包含所有變化
       setState(() {
         _showCreateForm = false;
         _rooms = rooms
@@ -148,7 +147,7 @@ class _HomePageState extends State<HomePage> {
       leading: Text('💬', style: TextStyle(fontSize: 24)),
       title: Text(
         room['name'],
-        style: TextStyle(fontFamily: 'Boska', fontWeight: FontWeight.w400),
+        style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w400),
       ),
       subtitle: Text('Tap to enter chat'),
       trailing: IconButton(
@@ -209,7 +208,6 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {
               setState(() {
                 _showCreateForm = !_showCreateForm;
-                // 如果打開創建表單，關閉搜尋表單
                 if (_showCreateForm) {
                   _showSearchForm = false;
                   _searchController.clear();
@@ -222,7 +220,6 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {
               setState(() {
                 _showSearchForm = !_showSearchForm;
-                // 如果打開搜尋表單，關閉創建表單
                 if (_showSearchForm) {
                   _showCreateForm = false;
                   _createRoomController.clear();
@@ -245,10 +242,8 @@ class _HomePageState extends State<HomePage> {
           ? Center(child: CircularProgressIndicator())
           : Stack(
               children: [
-                // 主內容列表
                 Column(
                   children: [
-                    // 搜尋框 - 在最上面，當出現時會推下列表
                     if (_showSearchForm)
                       Padding(
                         padding:
@@ -260,7 +255,7 @@ class _HomePageState extends State<HomePage> {
                                 controller: _searchController,
                                 placeholder: 'Search room name...',
                                 onChanged: (_) {
-                                  setState(() {}); // 即時更新UI
+                                  setState(() {});
                                 },
                               ),
                             ),
@@ -340,7 +335,7 @@ class _HomePageState extends State<HomePage> {
                                     : 'No rooms found',
                                 style: TextStyle(
                                   color: kTextGray,
-                                  fontFamily: 'Boska',
+                                  fontFamily: 'Satoshi',
                                 ),
                               ),
                             )
@@ -355,7 +350,7 @@ class _HomePageState extends State<HomePage> {
                                       child: Text(
                                         'Pinned',
                                         style: TextStyle(
-                                          fontFamily: 'Boska',
+                                          fontFamily: 'Satoshi',
                                           fontSize: 14,
                                           fontWeight: FontWeight.w700,
                                           color: kTextGray,
@@ -374,7 +369,7 @@ class _HomePageState extends State<HomePage> {
                                       child: Text(
                                         'All Rooms',
                                         style: TextStyle(
-                                          fontFamily: 'Boska',
+                                          fontFamily: 'Satoshi',
                                           fontSize: 14,
                                           fontWeight: FontWeight.w700,
                                           color: kTextGray,
@@ -391,7 +386,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-                // 只保留 Stack 容器
               ],
             ),
     );

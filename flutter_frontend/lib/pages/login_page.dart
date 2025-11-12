@@ -150,7 +150,7 @@ class _LoginPageState extends State<LoginPage> {
                     fontSize: 12,
                     color: Theme.of(context).textTheme.displayLarge?.color,
                     decoration: TextDecoration.underline,
-                    fontFamily: 'Boska',
+                    fontFamily: 'Satoshi',
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -169,7 +169,7 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(
                       fontSize: 12,
                       color: kErrorRed,
-                      fontFamily: 'Boska',
+                      fontFamily: 'Satoshi',
                       fontWeight: FontWeight.w400,
                     ),
                   ),

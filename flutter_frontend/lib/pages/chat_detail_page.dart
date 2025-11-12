@@ -115,7 +115,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       }
       if (mounted) {
         setState(() {});
-        // 加載訊息後自動滾動到最新訊息
         _scrollToBottom();
       }
     } catch (e) {
@@ -133,7 +132,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           setState(() {
             _messages.add(msg);
           });
-          // 接收新訊息時也自動滾動到底部
           _scrollToBottom();
         }
       }
@@ -143,7 +141,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   Future<void> _scrollToBottom() async {
-    // 延遲一下確保 ListView 已經更新
     await Future.delayed(Duration(milliseconds: 100));
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
@@ -166,7 +163,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       final result =
           await apiClient.postRoomMessage(int.parse(widget.roomId), text);
       print('[Chat] Message sent successfully: $result');
-      // 自動滾動到最新訊息
       _scrollToBottom();
     } catch (e) {
       print('[Chat] Error sending message: $e');
@@ -176,11 +172,72 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     }
   }
 
+  List<TextSpan> _buildMessageSpans(String content) {
+    final List<TextSpan> spans = [];
+    final RegExp mentionRegex = RegExp(r'@[\w]+');
+
+    int lastIndex = 0;
+    for (final match in mentionRegex.allMatches(content)) {
+      if (match.start > lastIndex) {
+        spans.add(
+          TextSpan(
+            text: content.substring(lastIndex, match.start),
+            style: TextStyle(
+              fontSize: 16,
+              color: kTextDark,
+              fontFamily: 'Satoshi',
+            ),
+          ),
+        );
+      }
+      spans.add(
+        TextSpan(
+          text: match.group(0),
+          style: TextStyle(
+            fontSize: 16,
+            color: kTextDark,
+            fontFamily: 'Satoshi',
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+
+      lastIndex = match.end;
+    }
+
+    if (lastIndex < content.length) {
+      spans.add(
+        TextSpan(
+          text: content.substring(lastIndex),
+          style: TextStyle(
+            fontSize: 16,
+            color: kTextDark,
+            fontFamily: 'Satoshi',
+          ),
+        ),
+      );
+    }
+
+    if (spans.isEmpty) {
+      spans.add(
+        TextSpan(
+          text: content,
+          style: TextStyle(
+            fontSize: 16,
+            color: kTextDark,
+            fontFamily: 'Satoshi',
+          ),
+        ),
+      );
+    }
+
+    return spans;
+  }
+
   Future<void> _uploadImage() async {
     try {
       final imageFile = await ImageService.showImagePickerDialog(context);
       if (imageFile != null) {
-        // 檢查圖片大小
         final isValid = await ImageService.isImageSizeValid(imageFile);
         if (!isValid) {
           if (mounted) {
@@ -191,7 +248,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           return;
         }
 
-        // TODO: 上傳圖片到後端
+        // TODO: upload image to server and send as message
         // final base64Image = await ImageService.imageToBase64(imageFile);
         // await apiClient.postRoomMessage(int.parse(widget.roomId), base64Image);
 
@@ -328,8 +385,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                     ? Center(
                         child: Text(
                           'No messages yet',
-                          style:
-                              TextStyle(color: kTextGray, fontFamily: 'Boska'),
+                          style: TextStyle(
+                              color: kTextGray, fontFamily: 'Satoshi'),
                         ),
                       )
                     : ListView.builder(
@@ -375,18 +432,16 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                                       ),
                                     ),
                                   SizedBox(height: 4),
-                                  Text(
-                                    msg.content,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: kTextDark,
+                                  RichText(
+                                    text: TextSpan(
+                                      children: _buildMessageSpans(msg.content),
                                     ),
                                   ),
                                   SizedBox(height: 4),
                                   Text(
                                     msg.formattedTime,
                                     style: TextStyle(
-                                      fontFamily: 'Boska',
+                                      fontFamily: 'Satoshi',
                                       fontSize: 11,
                                       color: kTextGray,
                                     ),
@@ -421,7 +476,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                       style: TextStyle(
                         fontSize: 12,
                         color: kSecondary,
-                        fontFamily: 'Boska',
+                        fontFamily: 'Satoshi',
                       ),
                     ),
                   ),

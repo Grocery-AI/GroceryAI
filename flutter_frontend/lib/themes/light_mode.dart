@@ -15,7 +15,7 @@ ThemeData lightTheme = ThemeData(
       fontSize: 18,
       fontWeight: FontWeight.bold,
       color: kPrimary,
-      fontFamily: 'StackSans',
+      fontFamily: 'Boska',
     ),
   ),
   textTheme: TextTheme(
@@ -23,12 +23,17 @@ ThemeData lightTheme = ThemeData(
       fontSize: 28,
       fontWeight: FontWeight.bold,
       color: kPrimary,
-      fontFamily: 'StackSans',
+      fontFamily: 'Satoshi',
     ),
     bodyMedium: TextStyle(
       fontSize: 14,
       color: kTextDark,
-      fontFamily: 'StackSansText',
+      fontFamily: 'Satoshi',
+    ),
+    bodySmall: TextStyle(
+      fontSize: 12,
+      color: kTextDark,
+      fontFamily: 'Satoshi',
     ),
   ),
 );

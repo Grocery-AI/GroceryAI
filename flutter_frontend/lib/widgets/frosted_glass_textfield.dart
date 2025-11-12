@@ -80,14 +80,14 @@ class _FrostedGlassTextFieldState extends State<FrostedGlassTextField> {
             style: TextStyle(
               fontSize: 14,
               color: kTextDark,
-              fontFamily: 'StackSansText',
+              fontFamily: 'Satoshi',
             ),
             decoration: InputDecoration(
               hintText: widget.placeholder,
               hintStyle: TextStyle(
                 fontSize: 14,
                 color: Color.fromARGB(153, 155, 163, 175),
-                fontFamily: 'StackSansText',
+                fontFamily: 'Satoshi',
               ),
               border: InputBorder.none,
               contentPadding:
