@@ -23,7 +23,7 @@ ThemeData darkTheme = ThemeData(
       fontSize: 18,
       fontWeight: FontWeight.bold,
       color: kDarkText,
-      fontFamily: 'StackSans',
+      fontFamily: 'Boska',
     ),
   ),
   textTheme: TextTheme(
@@ -31,12 +31,17 @@ ThemeData darkTheme = ThemeData(
       fontSize: 28,
       fontWeight: FontWeight.bold,
       color: kDarkText,
-      fontFamily: 'StackSans',
+      fontFamily: 'Satoshi',
     ),
     bodyMedium: TextStyle(
       fontSize: 14,
       color: kDarkTextSecondary,
-      fontFamily: 'StackSansText',
+      fontFamily: 'Satoshi',
+    ),
+    bodySmall: TextStyle(
+      fontSize: 12,
+      color: kDarkTextSecondary,
+      fontFamily: 'Satoshi',
     ),
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(

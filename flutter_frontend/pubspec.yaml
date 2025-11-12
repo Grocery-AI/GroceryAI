@@ -29,3 +29,9 @@ flutter:
           weight: 400
         - asset: assets/fonts/Boska-Bold.otf
           weight: 700
+    - family: Satoshi
+      fonts:
+        - asset: assets/fonts/Satoshi-Regular.otf
+          weight: 400
+        - asset: assets/fonts/Satoshi-Bold.otf
+          weight: 700
