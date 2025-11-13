@@ -5,7 +5,7 @@ import '../providers/auth_provider.dart';
 import '../widgets/frosted_glass_button.dart';
 import '../widgets/frosted_glass_textfield.dart';
 import '../themes/colors.dart';
-import 'home_page.dart';
+import 'main_shell.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -49,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => HomePage()),
+          MaterialPageRoute(builder: (_) => MainShell()),
         );
       }
     } catch (e) {
@@ -84,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => HomePage()),
+          MaterialPageRoute(builder: (_) => MainShell()),
         );
       }
     } catch (e) {
