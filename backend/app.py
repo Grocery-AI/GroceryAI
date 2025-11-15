@@ -574,7 +574,7 @@ async def api_generate_matching(room_id: int, payload: AIMatchingPayload, userna
         .where(Message.room_id == room_id)
         .order_by(Message.created_at) 
     )
-    msgs = msgs_res.scalers().all()
+    msgs = msgs_res.scalars().all()
     
     chat_history = []
     for m in msgs:
