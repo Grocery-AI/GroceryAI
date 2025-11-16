@@ -10,7 +10,7 @@ from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from dotenv import load_dotenv
 
-from db import SessionLocal, init_db, User, Message, Room, RoomMember
+from db import SessionLocal, init_db, User, Message, Room, RoomMember, Inventory
 from auth import get_password_hash, verify_password, create_access_token, get_current_user_token
 from websocket_manager import ConnectionManager
 from llm import chat_completion, AVAILABLE_MODELS
@@ -82,10 +82,123 @@ async def broadcast_message(session: AsyncSession, msg: Message, room_id: int):
         }
     }, room_id)
 
+async def handle_inventory_command(content: str, room_id: int, user_id: int):
+    """
+    Handle @inventory messages:
+    - If only '@inventory' → send instructions
+    - If '@inventory' plus lines → parse and upsert into Inventory table
+    """
+    # Strip the trigger word
+    cleaned = content.replace("@inventory", "").strip()
+
+    # Case 1: Just '@inventory' → explain the format
+    if not cleaned:
+        reply_text = (
+            "Let's load your inventory.\n\n"
+            "Reply with a message in the following format:\n"
+            "@inventory\n"
+            "product_name, stock_quantity, safety_stock_level\n\n"
+            "Example:\n"
+            "@inventory\n"
+            "Tomatoes, 50, 20   <-- Tomatoes = product name, 50 = current stock, 20 = safety stock threshold\n"
+            "Olive oil, 10, 3   <-- Olive oil = product name, 10 = current stock, 3 = safety stock threshold\n"
+            "Cheese, 5, 2\n\n"
+            "Make sure each item is on a separate line."
+        )
+        async with SessionLocal() as session:
+            bot_msg = Message(
+                room_id=room_id,
+                user_id=None,
+                content=reply_text,
+                is_bot=True,
+            )
+            session.add(bot_msg)
+            await session.commit()
+            await session.refresh(bot_msg)
+            await broadcast_message(session, bot_msg, room_id)
+        return
+
+    # Case 2: @inventory plus data lines
+    lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+    parsed_items = []
+    errors = []
+
+    for line in lines:
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) != 3:
+            errors.append(f"- '{line}' (expected: name, stock, safety_stock)")
+            continue
+
+        name, stock_str, safety_str = parts
+        try:
+            stock_val = int(stock_str)
+            safety_val = int(safety_str)
+        except ValueError:
+            errors.append(f"- '{line}' (stock and safety_stock must be integers)")
+            continue
+
+        parsed_items.append((name, stock_val, safety_val))
+
+    async with SessionLocal() as session:
+        # Upsert per product for this user
+        for name, stock_val, safety_val in parsed_items:
+            res = await session.execute(
+                select(Inventory).where(
+                    (Inventory.user_id == user_id)
+                    & (Inventory.product_name == name)
+                )
+            )
+            inv = res.scalar_one_or_none()
+            if inv:
+                inv.stock = stock_val
+                inv.safety_stock_level = safety_val
+            else:
+                inv = Inventory(
+                    user_id=user_id,
+                    product_name=name,
+                    stock=stock_val,
+                    safety_stock_level=safety_val,
+                )
+                session.add(inv)
+
+        await session.commit()
+
+        # Build confirmation message
+        msg_lines = []
+        if parsed_items:
+            msg_lines.append(f"✅ Saved/updated {len(parsed_items)} inventory item(s).")
+        if errors:
+            msg_lines.append("⚠️ Some lines could not be processed:\n" + "\n".join(errors))
+
+        reply_text = "\n".join(msg_lines) if msg_lines else "No valid inventory lines were found."
+
+        bot_msg = Message(
+            room_id=room_id,
+            user_id=None,
+            content=reply_text,
+            is_bot=True,
+        )
+        session.add(bot_msg)
+        await session.commit()
+        await session.refresh(bot_msg)
+        await broadcast_message(session, bot_msg, room_id)
+
 async def maybe_answer_with_llm(content: str, room_id: int, user_id: int):
-    """Generate an LLM response if message mentions @gro"""
+    """
+    - If message contains @inventory → handle inventory command (no LLM call)
+    - If message contains @gro → call LLM as before
+    """
+    # 1) Inventory flow
+    if "@inventory" in content:
+        await handle_inventory_command(content, room_id, user_id)
+        # You can still allow @gro in the same message if you want,
+        # but simplest is to return here:
+        return
+
+    # 2) Regular LLM flow with @gro
     if "@gro" not in content:
         return
+
     # Remove @gro tag from content before sending to LLM
     llm_content = content.replace("@gro", "").strip()
     system_prompt = (
@@ -93,7 +206,7 @@ async def maybe_answer_with_llm(content: str, room_id: int, user_id: int):
         "Provide concise, accurate answers suitable for a shared chat context. "
         "Cite facts succinctly when helpful and avoid extremely long messages."
     )
-    
+
     # Get user's preferred LLM model
     async with SessionLocal() as temp_session:
         user = await temp_session.get(User, user_id)
@@ -101,18 +214,26 @@ async def maybe_answer_with_llm(content: str, room_id: int, user_id: int):
             model_name = user.preferred_llm_model
         else:
             model_name = "gemini"
-    
+
     try:
-        reply_text = await chat_completion([
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": llm_content}
-        ], model_name=model_name)
+        reply_text = await chat_completion(
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": llm_content},
+            ],
+            model_name=model_name,
+        )
     except Exception as e:
         reply_text = f"(LLM error) {e}"
-    
+
     # Create new session for this async task
     async with SessionLocal() as session:
-        bot_msg = Message(room_id=room_id, user_id=None, content=reply_text, is_bot=True)
+        bot_msg = Message(
+            room_id=room_id,
+            user_id=None,
+            content=reply_text,
+            is_bot=True,
+        )
         session.add(bot_msg)
         await session.commit()
         await session.refresh(bot_msg)

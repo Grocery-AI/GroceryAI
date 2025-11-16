@@ -2,7 +2,7 @@ import os
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import String, Text, Boolean, ForeignKey, DateTime, func, DECIMAL, Float, Integer
+from sqlalchemy import String, Text, Boolean, ForeignKey, DateTime, func, DECIMAL, Float, Integer, Column
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -60,6 +60,19 @@ class Message(Base):
     created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now())
     room = relationship("Room", back_populates="messages")
     user = relationship("User", back_populates="messages")
+
+class Inventory(Base):
+    __tablename__ = "inventory"
+
+    product_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    product_name = Column(String(255), nullable=False)
+    stock = Column(Integer, nullable=False, default=0)
+    safety_stock_level = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    owner = relationship("User", backref="inventory_items")
 
 engine = create_async_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
