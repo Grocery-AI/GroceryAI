@@ -193,210 +193,233 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black.withOpacity(0.3)
-                    : Colors.black.withOpacity(0.15),
-                Colors.transparent,
-              ],
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight),
+        child: ClipRect(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.15),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+            child: AppBar(
+              backgroundColor: Colors.transparent,
+              title: Text(
+                'Profile',
+                style: TextStyle(
+                  fontFamily: 'Boska',
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).appBarTheme.titleTextStyle?.color,
+                ),
+              ),
+              centerTitle: true,
+              elevation: 0,
             ),
           ),
         ),
-        title: Text(
-          'Profile',
-          style: TextStyle(
-            fontFamily: 'Boska',
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).appBarTheme.titleTextStyle?.color,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  // Avatar with Edit Button
-                  Stack(
-                    children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? kDarkCard
-                              : kPrimary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            (_currentUsername.isNotEmpty
-                                ? _currentUsername[0].toUpperCase()
-                                : '?'),
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final maxWidth =
+                    constraints.maxWidth > 800 ? 800.0 : constraints.maxWidth;
+
+                return Center(
+                  child: Container(
+                    width: maxWidth,
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          // Avatar with Edit Button
+                          Stack(
+                            children: [
+                              Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? kDarkCard
+                                      : kPrimary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    (_currentUsername.isNotEmpty
+                                        ? _currentUsername[0].toUpperCase()
+                                        : '?'),
+                                    style: TextStyle(
+                                      fontFamily: 'Boska',
+                                      fontSize: 48,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Edit Button at Bottom Right
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: GestureDetector(
+                                  onTap: _changeAvatar,
+                                  child: Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: kSecondary,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.edit,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 20),
+
+                          // Username
+                          Text(
+                            _currentUsername,
                             style: TextStyle(
                               fontFamily: 'Boska',
-                              fontSize: 48,
+                              fontSize: 24,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: kTextDark,
                             ),
                           ),
-                        ),
-                      ),
-                      // Edit Button at Bottom Right
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: _changeAvatar,
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: kSecondary,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2,
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.edit,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
+                          SizedBox(height: 30),
 
-                  // Username
-                  Text(
-                    _currentUsername,
-                    style: TextStyle(
-                      fontFamily: 'Boska',
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: kTextDark,
-                    ),
-                  ),
-                  SizedBox(height: 30),
-
-                  // Settings Section
-                  Consumer<ThemeProvider>(
-                    builder: (context, themeProvider, _) {
-                      final isDarkMode =
-                          Theme.of(context).brightness == Brightness.dark;
-                      return Container(
-                        margin: EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color:
-                              isDarkMode ? Color(0xFF0D3D2E) : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isDarkMode
-                                ? Color(0xFF1A5C47)
-                                : Colors.grey[300]!,
-                          ),
-                        ),
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.brightness_6,
-                            color: isDarkMode ? kDarkText : kPrimary,
-                          ),
-                          title: Text(
-                            'Theme',
-                            style: TextStyle(
-                              fontFamily: 'Satoshi',
-                              fontWeight: FontWeight.w400,
-                              color: isDarkMode ? kDarkText : kTextDark,
-                            ),
-                          ),
-                          subtitle: Text(
-                            themeProvider.isDarkMode
-                                ? 'Dark Mode'
-                                : 'Light Mode',
-                            style: TextStyle(
-                              fontFamily: 'Satoshi',
-                              color:
-                                  isDarkMode ? kDarkTextSecondary : kTextGray,
-                            ),
-                          ),
-                          trailing: Switch(
-                            value: themeProvider.isDarkMode,
-                            onChanged: (value) {
-                              themeProvider.setThemeMode(
-                                value ? ThemeMode.dark : ThemeMode.light,
+                          // Settings Section
+                          Consumer<ThemeProvider>(
+                            builder: (context, themeProvider, _) {
+                              final isDarkMode = Theme.of(context).brightness ==
+                                  Brightness.dark;
+                              return Container(
+                                margin: EdgeInsets.only(bottom: 12),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode
+                                      ? Color(0xFF0D3D2E)
+                                      : Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isDarkMode
+                                        ? Color(0xFF1A5C47)
+                                        : Colors.grey[300]!,
+                                  ),
+                                ),
+                                child: ListTile(
+                                  leading: Icon(
+                                    Icons.brightness_6,
+                                    color: isDarkMode ? kDarkText : kPrimary,
+                                  ),
+                                  title: Text(
+                                    'Theme',
+                                    style: TextStyle(
+                                      fontFamily: 'Satoshi',
+                                      fontWeight: FontWeight.w400,
+                                      color: isDarkMode ? kDarkText : kTextDark,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    themeProvider.isDarkMode
+                                        ? 'Dark Mode'
+                                        : 'Light Mode',
+                                    style: TextStyle(
+                                      fontFamily: 'Satoshi',
+                                      color: isDarkMode
+                                          ? kDarkTextSecondary
+                                          : kTextGray,
+                                    ),
+                                  ),
+                                  trailing: Switch(
+                                    value: themeProvider.isDarkMode,
+                                    onChanged: (value) {
+                                      themeProvider.setThemeMode(
+                                        value
+                                            ? ThemeMode.dark
+                                            : ThemeMode.light,
+                                      );
+                                    },
+                                    activeColor: kSecondary,
+                                    inactiveThumbColor: const Color.fromARGB(
+                                        255, 148, 171, 149),
+                                  ),
+                                ),
                               );
                             },
-                            activeColor: kSecondary,
-                            inactiveThumbColor:
-                                const Color.fromARGB(255, 148, 171, 149),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildSettingTile(
-                    context: context,
-                    icon: Icons.smart_toy,
-                    title: 'AI Model',
-                    subtitle: _currentLLMModel.toUpperCase(),
-                    onTap: _showLLMModelDialog,
-                  ),
-                  _buildSettingTile(
-                    context: context,
-                    icon: Icons.language,
-                    title: 'Language',
-                    subtitle: 'English',
-                    onTap: () {},
-                  ),
-                  SizedBox(height: 30),
+                          _buildSettingTile(
+                            context: context,
+                            icon: Icons.smart_toy,
+                            title: 'AI Model',
+                            subtitle: _currentLLMModel.toUpperCase(),
+                            onTap: _showLLMModelDialog,
+                          ),
+                          _buildSettingTile(
+                            context: context,
+                            icon: Icons.language,
+                            title: 'Language',
+                            subtitle: 'English',
+                            onTap: () {},
+                          ),
+                          SizedBox(height: 30),
 
-                  // Logout Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: Consumer<ThemeProvider>(
-                      builder: (context, themeProvider, _) {
-                        final isLight =
-                            themeProvider.themeMode == ThemeMode.light;
-                        return ElevatedButton(
-                          onPressed: _logout,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                isLight ? Colors.red : Color(0xFFB83C3C),
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                          // Logout Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: Consumer<ThemeProvider>(
+                              builder: (context, themeProvider, _) {
+                                final isLight =
+                                    themeProvider.themeMode == ThemeMode.light;
+                                return ElevatedButton(
+                                  onPressed: _logout,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isLight
+                                        ? Colors.red
+                                        : Color(0xFFB83C3C),
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Logout',
+                                    style: TextStyle(
+                                      fontFamily: 'Satoshi',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
-                          child: Text(
-                            'Logout',
-                            style: TextStyle(
-                              fontFamily: 'Satoshi',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.white,
-                            ),
-                          ),
-                        );
-                      },
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
     );
   }

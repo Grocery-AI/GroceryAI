@@ -107,31 +107,44 @@ class _ContactsPageState extends State<ContactsPage> {
 
     return Scaffold(
       appBar: _buildGradientAppBar('Contacts'),
-      body: ListView.builder(
-        itemCount: contacts.length,
-        itemBuilder: (context, index) {
-          final username = contacts[index];
-          return ListTile(
-            leading: CircleAvatar(
-              radius: 24,
-              backgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
-              child: Text(
-                username[0].toUpperCase(),
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black,
-                ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth =
+              constraints.maxWidth > 800 ? 800.0 : constraints.maxWidth;
+
+          return Center(
+            child: Container(
+              width: maxWidth,
+              child: ListView.builder(
+                itemCount: contacts.length,
+                itemBuilder: (context, index) {
+                  final username = contacts[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      radius: 24,
+                      backgroundColor:
+                          isDark ? Colors.grey[800] : Colors.grey[300],
+                      child: Text(
+                        username[0].toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ),
+                    title: Text(username),
+                    subtitle: Text(
+                      '${_contactRooms[username]!.length} shared chat room${_contactRooms[username]!.length == 1 ? '' : 's'}',
+                      style: TextStyle(color: kTextGray, fontSize: 12),
+                    ),
+                    onTap: () {
+                      setState(() => _selectedContact = username);
+                    },
+                  );
+                },
               ),
             ),
-            title: Text(username),
-            subtitle: Text(
-              '${_contactRooms[username]!.length} shared chat room${_contactRooms[username]!.length == 1 ? '' : 's'}',
-              style: TextStyle(color: kTextGray, fontSize: 12),
-            ),
-            onTap: () {
-              setState(() => _selectedContact = username);
-            },
           );
         },
       ),
@@ -255,32 +268,37 @@ class _ContactsPageState extends State<ContactsPage> {
   }
 
   PreferredSizeWidget _buildGradientAppBar(String title) {
-    return AppBar(
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).brightness == Brightness.dark
-                  ? Colors.black.withOpacity(0.3)
-                  : Colors.black.withOpacity(0.15),
-              Colors.transparent,
-            ],
+    return PreferredSize(
+      preferredSize: Size.fromHeight(kToolbarHeight),
+      child: ClipRect(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black.withOpacity(0.3)
+                    : Colors.black.withOpacity(0.15),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            title: Text(
+              title,
+              style: TextStyle(
+                fontFamily: 'Boska',
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            centerTitle: true,
+            elevation: 0,
           ),
         ),
       ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontFamily: 'Boska',
-          fontSize: 28,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      centerTitle: true,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
     );
   }
 }

@@ -36,6 +36,27 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     _initializeChat();
   }
 
+  @override
+  void didUpdateWidget(ChatDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If roomId changed, reconnect to new room
+    if (oldWidget.roomId != widget.roomId) {
+      _channel.sink.close();
+      _messages.clear();
+      _hasError = false;
+      _isConnecting = true;
+      _initializeChat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _channel.sink.close();
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> _initializeChat() async {
     try {
       final storageService = getStorageService();
@@ -322,14 +343,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   @override
-  void dispose() {
-    _messageController.dispose();
-    _scrollController.dispose();
-    _channel.sink.close();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     // If there's an error during initialization, show error message
     if (_hasError) {
@@ -367,196 +380,218 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black.withOpacity(0.3)
-                    : Colors.black.withOpacity(0.15),
-                Colors.transparent,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight),
+        child: ClipRect(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.15),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+            child: AppBar(
+              backgroundColor: Colors.transparent,
+              title: Text(
+                widget.roomName,
+                style: TextStyle(
+                  fontFamily: 'Boska',
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              centerTitle: true,
+              elevation: 0,
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.person_add),
+                  onPressed: _showInviteDialog,
+                ),
               ],
             ),
           ),
         ),
-        title: Text(
-          widget.roomName,
-          style: TextStyle(
-            fontFamily: 'Boska',
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.person_add),
-            onPressed: _showInviteDialog,
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _isConnecting
-                ? Center(child: CircularProgressIndicator())
-                : _messages.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No messages yet',
-                          style: TextStyle(
-                              color: kTextGray, fontFamily: 'Satoshi'),
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        reverse: false,
-                        itemCount: _messages.length,
-                        itemBuilder: (_, i) {
-                          final msg = _messages[i];
-                          final isCurrentUser =
-                              msg.username == _currentUsername;
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth =
+              constraints.maxWidth > 800 ? 800.0 : constraints.maxWidth;
 
-                          return Align(
-                            alignment: isCurrentUser
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              margin: EdgeInsets.symmetric(
-                                vertical: 6,
-                                horizontal: 12,
-                              ),
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: isCurrentUser ? kUserBubble : kBotBubble,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              constraints: BoxConstraints(
-                                maxWidth:
-                                    MediaQuery.of(context).size.width * 0.75,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: isCurrentUser
-                                    ? CrossAxisAlignment.end
-                                    : CrossAxisAlignment.start,
-                                children: [
-                                  if (!isCurrentUser)
-                                    Text(
-                                      msg.username,
-                                      style: TextStyle(
-                                        fontFamily: 'Boska',
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 12,
-                                        color: kTextDark,
+          return Center(
+            child: Container(
+              width: maxWidth,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: _isConnecting
+                        ? Center(child: CircularProgressIndicator())
+                        : _messages.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No messages yet',
+                                  style: TextStyle(
+                                      color: kTextGray, fontFamily: 'Satoshi'),
+                                ),
+                              )
+                            : ListView.builder(
+                                controller: _scrollController,
+                                reverse: false,
+                                itemCount: _messages.length,
+                                itemBuilder: (_, i) {
+                                  final msg = _messages[i];
+                                  final isCurrentUser =
+                                      msg.username == _currentUsername;
+
+                                  return Align(
+                                    alignment: isCurrentUser
+                                        ? Alignment.centerRight
+                                        : Alignment.centerLeft,
+                                    child: Container(
+                                      margin: EdgeInsets.symmetric(
+                                        vertical: 6,
+                                        horizontal: 12,
+                                      ),
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: isCurrentUser
+                                            ? kUserBubble
+                                            : kBotBubble,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      constraints: BoxConstraints(
+                                        maxWidth:
+                                            MediaQuery.of(context).size.width *
+                                                0.75,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: isCurrentUser
+                                            ? CrossAxisAlignment.end
+                                            : CrossAxisAlignment.start,
+                                        children: [
+                                          if (!isCurrentUser)
+                                            Text(
+                                              msg.username,
+                                              style: TextStyle(
+                                                fontFamily: 'Boska',
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 12,
+                                                color: kTextDark,
+                                              ),
+                                            ),
+                                          SizedBox(height: 4),
+                                          RichText(
+                                            text: TextSpan(
+                                              children: _buildMessageSpans(
+                                                  msg.content),
+                                            ),
+                                          ),
+                                          SizedBox(height: 4),
+                                          Text(
+                                            msg.formattedTime,
+                                            style: TextStyle(
+                                              fontFamily: 'Satoshi',
+                                              fontSize: 11,
+                                              color: kTextGray,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  SizedBox(height: 4),
-                                  RichText(
-                                    text: TextSpan(
-                                      children: _buildMessageSpans(msg.content),
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    msg.formattedTime,
-                                    style: TextStyle(
-                                      fontFamily: 'Satoshi',
-                                      fontSize: 11,
-                                      color: kTextGray,
-                                    ),
-                                  ),
-                                ],
+                                  );
+                                },
+                              ),
+                  ),
+                  // LLM 提示信息
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: kSecondary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: kSecondary.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: kSecondary, size: 18),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Type "@gro " to ask the AI assistant',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: kSecondary,
+                                fontFamily: 'Satoshi',
                               ),
                             ),
-                          );
-                        },
+                          ),
+                        ],
                       ),
-          ),
-          // LLM 提示信息
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: kSecondary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: kSecondary.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: kSecondary, size: 18),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Type "@gro " to ask the AI assistant',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: kSecondary,
-                        fontFamily: 'Satoshi',
-                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        // 圖片上傳按鈕
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _uploadImage,
+                            child: Container(
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: kSecondary.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: kSecondary.withOpacity(0.5),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Icon(Icons.image,
+                                  color: kSecondary, size: 20),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: FrostedGlassTextField(
+                            controller: _messageController,
+                            placeholder: 'Type a message...',
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _sendMessage,
+                            child: Container(
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: kPrimary,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(Icons.send, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // 圖片上傳按鈕
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _uploadImage,
-                    child: Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: kSecondary.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: kSecondary.withOpacity(0.5),
-                          width: 1,
-                        ),
-                      ),
-                      child: Icon(Icons.image, color: kSecondary, size: 20),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: FrostedGlassTextField(
-                    controller: _messageController,
-                    placeholder: 'Type a message...',
-                  ),
-                ),
-                SizedBox(width: 8),
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _sendMessage,
-                    child: Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: kPrimary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(Icons.send, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
