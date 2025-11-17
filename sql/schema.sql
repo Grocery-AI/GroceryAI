@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS inventory (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Per-user/restaurant inventory items';
 
 -- Convert from load_groceries.py
-CREATE TABLE grocery_items (
+CREATE TABLE IF NOT EXISTS grocery_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     sub_category VARCHAR(120) NOT NULL,
