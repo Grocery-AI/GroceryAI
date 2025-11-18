@@ -255,6 +255,9 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
         
         # Run AI Module
         if kind == "analyze":
+            print("\n=== DEBUG INVENTORY_ITEMS GOING TO ANALYZE ===")
+            print(inventory_items)
+            
             ai_result = await analyze_inventory(inventory_items, grocery_items, chat_history, model_name=model_name)
             event_type = "inventory_analysis"
         elif kind == "menu":

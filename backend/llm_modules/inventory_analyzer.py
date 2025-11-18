@@ -65,6 +65,10 @@ async def analyze_inventory(inventory_items: List[Dict[str, Any]], grocery_items
         "chat_history": chat_text,
     }
     
+    print("\n=== PAYLOAD SENT TO LLM ===")
+    print(json.dumps(user_payload, indent=2))
+
+    
     raw = await chat_completion([
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": json.dumps(user_payload, indent=2)},
