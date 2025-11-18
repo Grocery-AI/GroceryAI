@@ -1,29 +1,90 @@
 import json
+import re
 from typing import List, Dict, Any
 
 from llm import chat_completion
 
 def format_chat_history(chat_history: List[Dict[str, str]]) -> str:
-    # Convert chat history into readable multi-line text for prompting.
-    return "\n".join([f"- {m['role']}: {m['content']}" for m in chat_history])
+    lines = []
+    for m in chat_history:
+        role = "User" if m["role"] == "user" else "Assistant"
+        content = m["content"].replace("\n", " ")
+        lines.append(f"[{role}] {content}")
+    return "\n".join(lines)
 
 def extract_json(text: str) -> Dict[str, Any]:
-    # Attempts to parse JSON from LLM output, falling back gracefully.
-    try: 
+    """
+    Production-grade LLM JSON extractor.
+    Handles:
+    - ```json fenced blocks
+    - raw JSON inside text
+    - extra commentary before/after JSON
+    - nested braces
+    - Gemini/Claude/OpenAI mixed output
+    
+    Returns empty dict if parsing fails.
+    """
+
+    if not text or not isinstance(text, str):
+        return {}
+
+    # 1) Try direct parse
+    try:
         return json.loads(text)
     except Exception:
         pass
-    
-    start = text.find("{")
-    end = text.rfind("}") + 1
-    if start != -1 and end != -1:
+
+    # 2) Try to extract fenced code block ```json ... ```
+    fenced = re.findall(r"```(?:json)?(.*?)```", text, re.DOTALL | re.IGNORECASE)
+    for block in fenced:
+        block = block.strip()
         try:
-            return json.loads(text[start:end])
+            return json.loads(block)
+        except Exception:
+            continue
+
+    # 3) Find the first { and last } and try to parse the substring
+    start = text.find("{")
+    end = text.rfind("}")
+    if 0 <= start < end:
+        snippet = text[start : end + 1]
+        try:
+            return json.loads(snippet)
         except Exception:
             pass
-        
+
+    # 4) Try to recover partial JSON using regex (matches balanced {...})
+    json_candidates = re.findall(r"\{(?:[^{}]|(?:\{.*\}))*\}", text, re.DOTALL)
+    for candidate in json_candidates:
+        try:
+            return json.loads(candidate)
+        except Exception:
+            continue
+
+    # 5) Last-ditch: fix common errors like trailing commas
+    try:
+        cleaned = re.sub(r",\s*}", "}", text)
+        cleaned = re.sub(r",\s*]", "]", cleaned)
+        start = cleaned.find("{")
+        end = cleaned.rfind("}") + 1
+        if start != -1 and end != -1:
+            return json.loads(cleaned[start:end])
+    except Exception:
+        pass
+
     return {}
 
+def ensure_narrative(data: Dict[str, Any], default: str) -> Dict[str, Any]:
+    """
+    Guarantee that `data` contains a non-empty 'narrative' string.
+    If missing or empty, fill with default.
+    """
+    if not isinstance(data, dict):
+        data = {}
+    narrative = data.get("narrative", "")
+    if not isinstance(narrative, str) or not narrative.strip():
+        data["narrative"] = default
+    return data
 
 async def extract_goal(chat_history: List[Dict[str, str]], model_name: str = "openai",) -> str:
     """
@@ -40,6 +101,7 @@ async def extract_goal(chat_history: List[Dict[str, str]], model_name: str = "op
     - "Friendsgiving dinner"
     - "Weekly grocery shopping"
     - "Hotpot night with friends"
+    - "Prepare next week's menu and restock"
     
     Output JSON ONLY:
     {
@@ -75,7 +137,7 @@ async def extract_assigned_members(chat_history: List[Dict[str, str]], members: 
     
     Output JSON ONLY:
     {
-        "asssigned": ["name1", "name2"]
+        "assigned": ["name1", "name2"]
     }
     
     Rules:

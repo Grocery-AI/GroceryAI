@@ -2,49 +2,70 @@ import json
 from typing import List, Dict, Any
 
 from llm import chat_completion
+from llm_modules.llm_utils import extract_json
 
 
 async def generate_restock_plan(inventory_items: List[Dict], grocery_items: List[Dict], model_name:str = "openai"):
     """
-    Generate weekly procurement plan + supplier recommendations.
+    Inventory-based retock
+    Generate AI-powered weekly restock plan using inventory + grocery catalog.
     """
     
     system_prompt = """
     You are an AI Procurement Planner for a restaurant.
     
-    Given:
-    1. current inventory
-    2. grocery catalog with price + category
+    Your tasks:
+    - Identify items where stock < safety_stock_level.
+    - Recommend restock quantity based on shortage severity.
+    - Suggest supplier using grocery_items provided.
+    - Estimate price from grocery_items.
+    - Provide a friendly narrative.
+
+    RULES:
+    - Output ONLY VALID JSON.
+    - No explanations outside the JSON block.
+    - Use EXACT FIELD NAMES below.
     
-    Output JSON ONLY:
+    JSON FORMAT:
     {
-        "narrative": "<short story-style explanation>",
-        "restock_plan": [
+        "goal": "",
+        "summary": "<string>",
+        "narrative": "<string>",
+        "items": [
             {
-                "product_name: "...",
-                "needed_qty": <int>,
-                "recommended_supplier": "supplier name or link>",
-                "price_estimate": <float>
+                "name": "<string>",
+                "quantity": <int>,
+                "notes": "<string>",
+                "price_estimate": <float>,
+                "supplier": "<string>"
             }
         ]
     }
     """
     
-    user_prompt = f"""
-    Inventory: {json.dumps(inventory_items, indent=2)}
     
-    Grocery catalog sample: {json.dumps(grocery_items[:30], indent=2)}
+    user_payload = json.dumps(
+        {
+            "inventory": inventory_items,
+            "grocery_catalog_sample": grocery_items,
+        }, 
+        indent=2
+    )
     
-    Create a weekly restock plan with suppliers.
-    """
+    raw = await chat_completion(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_payload}
+        ], 
+        model_name=model_name,
+    )
     
-    raw = await chat_completion([
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt}
-    ], model_name=model_name)
     
-    
-    try:
-        return json.loads(raw)
-    except:
-        return {"narrative": raw, "restock_plan": []}
+    data = extract_json(raw)
+
+    return {
+        "goal": "",
+        "summary": data.get("summary", "Generated restock plan."),
+        "narrative": data.get("narrative", "Here is your restock summary."),
+        "items": data.get("items", []),
+    }

@@ -1,4 +1,4 @@
-print("🔥 Running backend version: 2025-11-16 15:00")
+print("🔥 Running backend version: 2025-11-17 15:00")
 import os
 import json
 import asyncio
@@ -214,6 +214,20 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
         user = await session.get(User, user_id)
         model_name = user.preferred_llm_model if user else "openai"
         
+        # Load chat history for this room
+        msgs_res = await session.execute(
+            select(Message)
+            .where(Message.room_id == room_id)
+            .order_by(Message.created_at)
+        )
+        msgs = msgs_res.scalars().all()
+        
+        chat_history = [
+            {"role": "assistant" if m.is_bot else "user", "content": m.content}
+            for m in msgs
+        ]
+        
+        
         # get inventory
         inv_res = await session.execute(
             select(Inventory).where(Inventory.user_id == user_id)
@@ -227,30 +241,27 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
             for row in inv_res.scalars().all()
         ]
         
-        # get grocery catalog (for restock plan)
-        if kind == "restock":
-            gro_res = await session.execute(select(GroceryItem).limit(300))
-            grocery_list = [
-                {
-                    "title": g.title,
-                    "sub_category": g.sub_category,
-                    "price": float(g.price),
-                    "rating": g.rating_value or 0.0,
-                }
-                for g in gro_res.scalars().all()
-            ]
-        else:
-            grocery_list = []
-            
+        gro_res = await session.execute(select(GroceryItem).limit(2000))
+        grocery_items = [
+            {
+                "title": g.title,
+                "sub_category": g.sub_category,
+                "price": float(g.price),
+                "rating": g.rating_value or 0.0,
+            }
+            for g in gro_res.scalars().all()
+        ]
+
+        
         # Run AI Module
         if kind == "analyze":
-            ai_result = await analyze_inventory(inventory_items, model_name=model_name)
+            ai_result = await analyze_inventory(inventory_items, grocery_items, chat_history, model_name=model_name)
             event_type = "inventory_analysis"
         elif kind == "menu":
-            ai_result = await generate_menu(inventory_items, model_name=model_name)
-            event_type = "menu_suggeestions"
+            ai_result = await generate_menu(inventory_items, grocery_items, chat_history, model_name=model_name)
+            event_type = "menu_suggestions"
         elif kind == "restock":
-            ai_result = await generate_restock_plan(inventory_items, grocery_list, model_name=model_name)
+            ai_result = await generate_restock_plan(inventory_items, grocery_items, model_name=model_name)
             event_type = "restock_plan"
         else:
             ai_result = {"narrative": "Unknown command.", "data": {}}
@@ -306,7 +317,7 @@ async def maybe_answer_with_llm(content: str, room_id: int, user_id: int):
         await handle_gro_command("menu", room_id, user_id)
         return
     
-    if "@grp restock" in content.lower():
+    if "@gro restock" in content.lower():
         await handle_gro_command("restock", room_id, user_id)
         return
     
