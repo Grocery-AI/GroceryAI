@@ -1,4 +1,4 @@
-print("🔥 Running backend version: 2025-11-23 00:00")
+print("🔥 Running backend version: 2025-11-24 16:00")
 import os
 import json
 import asyncio
@@ -58,7 +58,7 @@ def download_embeddings_if_needed():
         blob.download_to_filename(LOCAL_EMBEDDINGS_PATH)
         print(f"[Startup] Download complete: {LOCAL_EMBEDDINGS_PATH}")
     except Exception as e:
-        print(f"[Startup] ❌ Failed to download embeddings: {e}")
+        print(f"[Startup] Failed to download embeddings: {e}")
         # Depending on your logic, you might want to raise e here to stop the container
 
 # ---------------------------------------------
@@ -426,10 +426,42 @@ async def maybe_answer_with_llm(content: str, room_id: int, user_id: int):
                 for m in msgs
             ]
         
-        result = await generate_procurement_plan(chat_history=chat_history, model_name=model_name)
+        # Generic List
+        plan_result = await generate_procurement_plan(chat_history=chat_history, model_name=model_name)
         
-        narrative = result.get("narrative", "Here is your procurement plan.")
-        await broadcast_ai_event(room_id, "procurement_plan", narrative, result)
+        # RAG Enrichment: vector search for every keyword in list
+        enriched_items = []
+        async with SessionLocal() as session:
+            for item in plan_result.get("items", []):
+                raw_name = item.get("name")
+                
+                item["match_found"] = False
+                item["real_product"] = None
+                
+                if raw_name:
+                    matches = await get_relevant_grocery_items(session, raw_name, limit=1)
+                    
+                    if matches:
+                        best_match = matches[0]
+                        
+                        item["match_found"] = True
+                        item["real_product"] = {
+                            "id": best_match.id,
+                            "title": best_match.title,
+                            "price": float(best_match.price),
+                            "sub_category": best_match.sub_category,
+                            "rating": best_match.rating_value or 0.0
+                        }
+                        print(f"Matched '{raw_name}' -> '{best_match.title}'")
+                    else:
+                        print(f"No match found for '{raw_name}'")
+                
+                enriched_items.append(item)
+        
+        plan_result["items"] = enriched_items
+                
+        narrative = plan_result.get("narrative", "Here is your procurement plan.")
+        await broadcast_ai_event(room_id, "procurement_plan", narrative, plan_result)
         return
     
 
