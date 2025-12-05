@@ -62,7 +62,7 @@ class _WebShellState extends State<WebShell> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Grocery AI',
+          'GRO',
           style: TextStyle(
             fontFamily: 'Boska',
             fontSize: 24,

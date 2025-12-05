@@ -481,7 +481,7 @@
 				DEVELOPMENT_TEAM = LCM9HC4L9S;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Grocery AI";
+				INFOPLIST_KEY_CFBundleDisplayName = "GRO";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -675,7 +675,7 @@
 				DEVELOPMENT_TEAM = LCM9HC4L9S;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Grocery AI";
+				INFOPLIST_KEY_CFBundleDisplayName = "GRO";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -702,7 +702,7 @@
 				DEVELOPMENT_TEAM = LCM9HC4L9S;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Grocery AI";
+				INFOPLIST_KEY_CFBundleDisplayName = "GRO";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

@@ -106,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Grocery AI',
+                  'GRO',
                   style: TextStyle(
                     fontFamily: 'Boska',
                     fontSize: 60,
