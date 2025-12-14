@@ -1094,3 +1094,13 @@ async def check_shopping_list_item(
     await session.commit()
     
     return {"ok": True, "checked": new_checked, "inventory_updated": new_checked}
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, room_id: int):
+    await manager.connect(websocket, room_id)
+    try:
+        while True:
+            # Keep connection alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, room_id)
