@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from dotenv import load_dotenv
 from google.cloud import storage
@@ -795,11 +795,15 @@ async def post_room_message(room_id: int, payload: MessagePayload, username: str
         if not member:
             raise HTTPException(status_code=403, detail="Not a member of this room")
         
-        # If user had deleted this room, reactivate it (undelete)
-        if member.deleted_at is not None:
-            member.deleted_at = None
-            session.add(member)
-            await session.commit()
+        # Reactivate room for ALL members (if they had soft-deleted it)
+        # This ensures that if someone sends a message, the room reappears for everyone
+        await session.execute(
+            update(RoomMember)
+            .where(RoomMember.room_id == room_id)
+            .where(RoomMember.deleted_at != None)
+            .values(deleted_at=None)
+        )
+        await session.commit()
         
         # Create message
         m = Message(room_id=room_id, user_id=u.id, content=payload.content, is_bot=False)
