@@ -59,6 +59,6 @@ async def analyze_inventory(inventory_items, low_stock_items, healthy_items, gro
     
     return {
         "narrative": final_narrative,
-        "low_stock": parsed.get("low_stock", low_stock_items),
-        "healthy": parsed.get("healthy", healthy_items),
+        "low_stock": low_stock_items,
+        "healthy": healthy_items,
     }

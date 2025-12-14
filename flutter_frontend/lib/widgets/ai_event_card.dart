@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../services/api_client.dart';
 import '../models/ai_event.dart';
+import '../pages/inventory_page.dart';
 
 class AIEventCard extends StatelessWidget {
   final AIEvent event;
@@ -84,23 +85,78 @@ class _InventoryAnalysisWidget extends StatelessWidget {
     final lowStock = event.lowStockItems;
     final healthy = event.healthyItems;
 
+    if (lowStock.isEmpty && healthy.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Inventory is empty.', style: TextStyle(fontStyle: FontStyle.italic)),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => InventoryPage()),
+              );
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Go to Inventory'),
+          ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (lowStock.isNotEmpty) ...[
           const Text('⚠️ Low Stock:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-          ...lowStock.map((item) => Padding(
-            padding: const EdgeInsets.only(left: 8, top: 4),
-            child: Text('• ${item['product_name']} (Stock: ${item['stock']})'),
-          )),
+          ...lowStock.map((item) {
+            final stock = item['stock'] ?? 0;
+            final safety = item['safety_stock_level'] ?? 0;
+            final name = item['product_name'] ?? 'Unknown';
+            return Padding(
+              padding: const EdgeInsets.only(left: 8, top: 4, bottom: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text('• $name (Stock: $stock / Safety: $safety)'),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add_shopping_cart, size: 20, color: Colors.blue),
+                    tooltip: 'Add to Shopping List',
+                    onPressed: () async {
+                      final quantity = (safety - stock) > 0 ? (safety - stock) : 1;
+                      final itemsJson = jsonEncode([
+                        {"item": name, "quantity": quantity, "unit": "unit"}
+                      ]);
+                      try {
+                        await apiClient.createShoppingList("Restock: $name", itemsJson);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Added "$name" to new shopping list')),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            );
+          }),
           const SizedBox(height: 8),
         ],
         if (healthy.isNotEmpty) ...[
           const Text('✅ Healthy:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-          ...healthy.map((item) => Padding(
-            padding: const EdgeInsets.only(left: 8, top: 4),
-            child: Text('• ${item['product_name']}'),
-          )),
+          ...healthy.map((item) {
+            final stock = item['stock'] ?? 0;
+            final safety = item['safety_stock_level'] ?? 0;
+            return Padding(
+              padding: const EdgeInsets.only(left: 8, top: 4),
+              child: Text('• ${item['product_name']} (Stock: $stock / Safety: $safety)'),
+            );
+          }),
         ],
       ],
     );

@@ -217,7 +217,8 @@ class ApiClient {
     return res['items'] as List<dynamic>;
   }
 
-  Future<void> upsertInventoryItem(String name, int stock, int safetyStock) async {
+  Future<void> upsertInventoryItem(
+      String name, int stock, int safetyStock) async {
     await post('/inventory', {
       'product_name': name,
       'stock': stock,
@@ -258,7 +259,7 @@ class ApiClient {
   WebSocketChannel? _channel;
   final _aiEventController = StreamController<AIEvent>.broadcast();
   final _messageController = StreamController<Map<String, dynamic>>.broadcast();
-  
+
   Stream<AIEvent> get aiEventStream => _aiEventController.stream;
   Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
 
@@ -267,10 +268,10 @@ class ApiClient {
 
     final url = '$wsUrl?room_id=$roomId';
     print('[ApiClient] Connecting to WebSocket: $url');
-    
+
     try {
       _channel = WebSocketChannel.connect(Uri.parse(url));
-      
+
       _channel!.stream.listen(
         (message) {
           print('[ApiClient] WS Message: $message');

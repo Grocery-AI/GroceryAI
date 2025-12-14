@@ -25,7 +25,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   // late WebSocketChannel _channel; // Removed
 
   final _messageController = TextEditingController();
-  final _messages = <dynamic>[]; // Changed to dynamic to hold both Message and AIEvent
+  final _messages =
+      <dynamic>[]; // Changed to dynamic to hold both Message and AIEvent
   late String _currentUsername;
   bool _isConnecting = true;
   bool _hasError = false;
@@ -106,7 +107,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             _scrollToBottom();
           }
         });
-        
+
         if (mounted) {
           setState(() => _isConnecting = false);
         }
@@ -149,7 +150,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   // _handleWebSocketMessage removed as it is replaced by stream listeners
-
 
   Future<void> _scrollToBottom() async {
     await Future.delayed(Duration(milliseconds: 100));
@@ -632,11 +632,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                                 itemCount: _messages.length,
                                 itemBuilder: (_, i) {
                                   final item = _messages[i];
-                                  
+
                                   if (item is AIEvent) {
                                     return AIEventCard(event: item);
                                   }
-                                  
+
                                   final msg = item as Message;
                                   final isCurrentUser =
                                       msg.username == _currentUsername;
@@ -759,7 +759,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                         Expanded(
                           child: FrostedGlassTextField(
                             controller: _messageController,
-                            placeholder: 'Try: @gro analyze, @gro menu, @gro restock, @gro plan',
+                            placeholder:
+                                'Try: @gro analyze, @gro menu, @gro restock, @gro plan',
                           ),
                         ),
                         SizedBox(width: 8),
@@ -788,5 +789,4 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       ),
     );
   }
-
 }
