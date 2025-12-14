@@ -38,8 +38,8 @@ class Room(Base):
     name: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    messages = relationship("Message", back_populates="room")
-    members = relationship("RoomMember", back_populates="room")
+    messages = relationship("Message", back_populates="room", cascade="all, delete-orphan")
+    members = relationship("RoomMember", back_populates="room", cascade="all, delete-orphan")
 
 class RoomMember(Base):
     __tablename__ = "room_members"
