@@ -359,28 +359,49 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
             event_type = "unknown"
             
         narrative = ai_result.get("narrative", "AI suggestion generated.")
-        
-        # Construct the full event data
+
+        # 1) Broadcast AI event in real-time so connected clients render the card immediately
+        await broadcast_ai_event(room_id, event_type, narrative, ai_result)
+
+        # 2) Persist the AI event as a special JSON message so it remains in chat history
+        import json
         event_data = {
             "type": "ai_event",
             "event_type": event_type,
             "narrative": narrative,
-            "data": ai_result
+            "data": ai_result,
         }
-        
-        # Save as a special message with JSON content
-        import json
-        bot_msg_content = "AI_EVENT_JSON:" + json.dumps(event_data)
-        
+        ai_event_msg_content = "AI_EVENT_JSON:" + json.dumps(event_data)
+
+        ai_event_msg = Message(
+            room_id=room_id,
+            user_id=None,
+            content=ai_event_msg_content,
+            is_bot=True,
+        )
+        session.add(ai_event_msg)
+
+        # 3) Also create and broadcast the short bot text message (keeps previous UX)
+        msg_text_map = {
+            "inventory_analysis": "Generated inventory analysis for your current stock.",
+            "menu_suggestions": "Generated menu suggestions based on your inventory and items from grocery store.",
+            "restock_plan": "Generated a suggested restock plan.",
+        }
+        bot_msg_text = msg_text_map.get(event_type, "AI suggestion generated.")
+
         bot_msg = Message(
             room_id=room_id,
             user_id=None,
-            content=bot_msg_content,
+            content=bot_msg_text,
             is_bot=True,
         )
         session.add(bot_msg)
+
+        # Commit both messages, refresh the bot message for broadcasting
         await session.commit()
         await session.refresh(bot_msg)
+
+        # Broadcast the short bot message so clients see the same behavior as before
         await broadcast_message(session, bot_msg, room_id)
 
 # Router for @inventory / @gro commands / default LLM Chat
