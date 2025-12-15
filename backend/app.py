@@ -360,20 +360,22 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
             
         narrative = ai_result.get("narrative", "AI suggestion generated.")
         
-        await broadcast_ai_event(room_id, event_type, narrative, ai_result)
-        
-        # Send a short chat message as well
-        msg_text_map = {
-            "inventory_analysis": "Generated inventory analysis for your current stock.",
-            "menu_suggestions": "Generated menu suggestions based on your inventory and items from grocery store.",
-            "restock_plan": "Generated a suggested restock plan.",
+        # Construct the full event data
+        event_data = {
+            "type": "ai_event",
+            "event_type": event_type,
+            "narrative": narrative,
+            "data": ai_result
         }
-        bot_msg_text = msg_text_map.get(event_type, "AI suggestion generated.")
+        
+        # Save as a special message with JSON content
+        import json
+        bot_msg_content = "AI_EVENT_JSON:" + json.dumps(event_data)
         
         bot_msg = Message(
             room_id=room_id,
             user_id=None,
-            content=bot_msg_text,
+            content=bot_msg_content,
             is_bot=True,
         )
         session.add(bot_msg)

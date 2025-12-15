@@ -101,9 +101,24 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         apiClient.messageStream.listen((msgData) {
           if (mounted) {
             final msg = Message.fromJson(msgData);
-            setState(() {
-              _messages.add(msg);
-            });
+            if (msg.content.startsWith('AI_EVENT_JSON:')) {
+              try {
+                final jsonStr = msg.content.substring('AI_EVENT_JSON:'.length);
+                final eventData = jsonDecode(jsonStr);
+                setState(() {
+                  _messages.add(AIEvent.fromJson(eventData));
+                });
+              } catch (e) {
+                print('Error parsing AI event from stream: $e');
+                setState(() {
+                  _messages.add(msg);
+                });
+              }
+            } else {
+              setState(() {
+                _messages.add(msg);
+              });
+            }
             _scrollToBottom();
           }
         });
@@ -138,7 +153,19 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       final res = await apiClient.getRoomMessages(int.parse(widget.roomId));
       _messages.clear();
       for (var item in res) {
-        _messages.add(Message.fromJson(item));
+        final msg = Message.fromJson(item);
+        if (msg.content.startsWith('AI_EVENT_JSON:')) {
+          try {
+            final jsonStr = msg.content.substring('AI_EVENT_JSON:'.length);
+            final eventData = jsonDecode(jsonStr);
+            _messages.add(AIEvent.fromJson(eventData));
+          } catch (e) {
+            print('Error parsing AI event from message: $e');
+            _messages.add(msg);
+          }
+        } else {
+          _messages.add(msg);
+        }
       }
       if (mounted) {
         setState(() {});
