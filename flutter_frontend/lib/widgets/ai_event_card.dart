@@ -109,40 +109,24 @@ class _InventoryAnalysisWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (lowStock.isNotEmpty) ...[
-          const Text('⚠️ Low Stock:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+          Row(
+            children: [
+              const Text('⚠️ Low Stock:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.add_shopping_cart, size: 20, color: Colors.blue),
+                tooltip: 'Create Restock List',
+                onPressed: () => _showRestockDialog(context, lowStock),
+              ),
+            ],
+          ),
           ...lowStock.map((item) {
             final stock = item['stock'] ?? 0;
             final safety = item['safety_stock_level'] ?? 0;
             final name = item['product_name'] ?? 'Unknown';
             return Padding(
               padding: const EdgeInsets.only(left: 8, top: 4, bottom: 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text('• $name (Stock: $stock / Safety: $safety)'),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add_shopping_cart, size: 20, color: Colors.blue),
-                    tooltip: 'Add to Shopping List',
-                    onPressed: () async {
-                      final quantity = (safety - stock) > 0 ? (safety - stock) : 1;
-                      final itemsJson = jsonEncode([
-                        {"item": name, "quantity": quantity, "unit": "unit"}
-                      ]);
-                      try {
-                        await apiClient.createShoppingList("Restock: $name", itemsJson);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Added "$name" to new shopping list')),
-                        );
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error: $e')),
-                        );
-                      }
-                    },
-                  ),
-                ],
-              ),
+              child: Text('• $name (Stock: $stock / Safety: $safety)'),
             );
           }),
           const SizedBox(height: 8),
@@ -160,6 +144,101 @@ class _InventoryAnalysisWidget extends StatelessWidget {
         ],
       ],
     );
+  }
+
+  void _showRestockDialog(BuildContext context, List<dynamic> lowStockItems) {
+    // Default: all selected
+    final selectedItems = Set<String>.from(
+        lowStockItems.map((e) => e['product_name'] as String));
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Create Restock List'),
+              content: Container(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: lowStockItems.length,
+                  itemBuilder: (context, index) {
+                    final item = lowStockItems[index];
+                    final name = item['product_name'] as String;
+                    final stock = item['stock'] ?? 0;
+                    final safety = item['safety_stock_level'] ?? 0;
+                    final quantity = (safety - stock) > 0 ? (safety - stock) : 1;
+
+                    return CheckboxListTile(
+                      title: Text(name),
+                      subtitle: Text('Qty: $quantity (Stock: $stock)'),
+                      value: selectedItems.contains(name),
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            selectedItems.add(name);
+                          } else {
+                            selectedItems.remove(name);
+                          }
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: selectedItems.isEmpty
+                      ? null
+                      : () async {
+                          Navigator.pop(context); // Close dialog first
+                          await _createShoppingList(context, lowStockItems, selectedItems);
+                        },
+                  child: const Text('Create List'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _createShoppingList(BuildContext context,
+      List<dynamic> allItems, Set<String> selectedNames) async {
+    final itemsToBuy = allItems.where((item) => selectedNames.contains(item['product_name'])).map((item) {
+      final stock = item['stock'] ?? 0;
+      final safety = item['safety_stock_level'] ?? 0;
+      final quantity = (safety - stock) > 0 ? (safety - stock) : 1;
+      
+      return {
+        "name": item['product_name'], // Fixed key from "item" to "name"
+        "quantity": quantity,
+        "unit": "unit",
+        "notes": "Auto-restock"
+      };
+    }).toList();
+
+    if (itemsToBuy.isEmpty) return;
+
+    final itemsJson = jsonEncode(itemsToBuy);
+    final title = "Restock ${DateTime.now().toString().substring(0, 10)}";
+
+    try {
+      await apiClient.createShoppingList(title, itemsJson);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Created shopping list with ${itemsToBuy.length} items')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error creating list: $e')),
+      );
+    }
   }
 }
 
