@@ -227,6 +227,43 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     final goal = message.replaceFirst('@plan', '').trim();
     print('[Chat] Executing @plan command with goal: $goal');
 
+
+  Widget _groActionButton(BuildContext context, IconData icon, String tooltip, VoidCallback onPressed) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withOpacity(0.04) : kBgLight,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: isDark ? Colors.white12 : Colors.grey.withOpacity(0.12)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: kPrimary),
+            SizedBox(height: 2),
+            Text(
+              tooltip,
+              style: TextStyle(fontSize: 10, fontFamily: 'Satoshi', color: kTextGray),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendGroCommand(String cmd) async {
+    final content = '@gro $cmd';
+    try {
+      await apiClient.postRoomMessage(int.parse(widget.roomId), content);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Triggered @gro $cmd')));
+    } catch (e) {
+      print('Error sending gro command: $e');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send command: $e')));
+    }
+  }
     try {
       final roomId = int.parse(widget.roomId);
       final result = await apiClient.generateAIPlan(roomId,
@@ -763,24 +800,35 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                     child: Row(
                       children: [
                         // 圖片上傳按鈕
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: _uploadImage,
-                            child: Container(
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: kSecondary.withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: kSecondary.withOpacity(0.5),
-                                  width: 1,
+                        // GRO action buttons + image upload
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _groActionButton(context, Icons.analytics, 'Analyze', () => _sendGroCommand('analyze')),
+                            SizedBox(width: 8),
+                            _groActionButton(context, Icons.stacked_line_chart, 'Restock', () => _sendGroCommand('restock')),
+                            SizedBox(width: 8),
+                            _groActionButton(context, Icons.auto_mode, 'Plan', () => _sendGroCommand('plan')),
+                            SizedBox(width: 8),
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: _uploadImage,
+                                child: Container(
+                                  padding: EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: kSecondary.withOpacity(0.3),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: kSecondary.withOpacity(0.5),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Icon(Icons.image, color: kSecondary, size: 20),
                                 ),
                               ),
-                              child: Icon(Icons.image,
-                                  color: kSecondary, size: 20),
                             ),
-                          ),
+                          ],
                         ),
                         SizedBox(width: 8),
                         Expanded(
